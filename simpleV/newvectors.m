@@ -1,0 +1,1 @@
+function [newquat] = newvectors (quat)
