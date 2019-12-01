@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "Y:\\Drive\\GestureToText\\WizardofOz\\NatNetConsole.csproj": {}
+    "Y:\\Drive\\Github\\FourthYearProject\\WizardofOz\\NatNetConsole.csproj": {}
   },
   "projects": {
-    "Y:\\Drive\\GestureToText\\WizardofOz\\NatNetConsole.csproj": {
+    "Y:\\Drive\\Github\\FourthYearProject\\WizardofOz\\NatNetConsole.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "Y:\\Drive\\GestureToText\\WizardofOz\\NatNetConsole.csproj",
+        "projectUniqueName": "Y:\\Drive\\Github\\FourthYearProject\\WizardofOz\\NatNetConsole.csproj",
         "projectName": "NatNetConsole",
-        "projectPath": "Y:\\Drive\\GestureToText\\WizardofOz\\NatNetConsole.csproj",
+        "projectPath": "Y:\\Drive\\Github\\FourthYearProject\\WizardofOz\\NatNetConsole.csproj",
         "packagesPath": "C:\\Users\\shawn\\.nuget\\packages\\",
-        "outputPath": "Y:\\Drive\\GestureToText\\WizardofOz\\obj\\",
+        "outputPath": "Y:\\Drive\\Github\\FourthYearProject\\WizardofOz\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\shawn\\AppData\\Roaming\\NuGet\\NuGet.Config",

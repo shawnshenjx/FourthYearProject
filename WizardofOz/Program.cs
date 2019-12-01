@@ -38,24 +38,8 @@ namespace WOZconsole
         private static bool mAssetChanged = false;
 
 
-
-
         static void Main(string[] args)
         {
-            string startupPath = Environment.CurrentDirectory;
-            Console.WriteLine(startupPath);
-            string pathCmd = string.Format("cd {0}/../../..", startupPath);
-            Console.WriteLine(pathCmd);
-
-            // Create the MATLAB instance 
-            MLApp.MLApp matlab = new MLApp.MLApp();
-
-            // Change to the directory where the function is located 
-            matlab.Execute(pathCmd);
-
-
-
-
             Console.WriteLine("SampleClientML managed client application starting...\n");
             /*  [NatNet] Initialize client object and connect to the server  */
             connectToServer();                          // Initialize a NatNetClient object and connect to a server.
@@ -76,11 +60,12 @@ namespace WOZconsole
                 /*  [NatNet] Assigning a event handler function for fetching frame data each time a frame is received   */
                 mNatNet.OnFrameReady += new NatNetML.FrameReadyEventHandler(fetchFrameData);
 
+                Console.WriteLine("Success: Data Port Connected \n");
 
 
             }
 
-            matlab.Feval("recognition",  out word, markerpos);
+
 
             while (!(Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Escape))
             {
@@ -88,7 +73,7 @@ namespace WOZconsole
                 // Enter ESC to exit
 
                 // Exception 
-                handler for updated assets list.
+
                 if (mAssetChanged == true)
                     {
                         Console.WriteLine("\n===============================================================================\n");
@@ -96,10 +81,9 @@ namespace WOZconsole
 
                         /*  Clear out existing lists */
                         mDataDescriptor.Clear();
-                        mHtSkelRBs.Clear();
+
                         mRigidBodies.Clear();
-                        mSkeletons.Clear();
-                        mForcePlates.Clear();
+ 
 
                         /* [NatNet] Re-fetch the updated list of descriptors  */
                         fetchDataDescriptor();
@@ -112,11 +96,10 @@ namespace WOZconsole
 
             /*  Clearing Saved Descriptions */
             mRigidBodies.Clear();
-            mSkeletons.Clear();
-            mHtSkelRBs.Clear();
-            mForcePlates.Clear();
+
             mNatNet.Disconnect();
         }
+
 
         static void fetchFrameData(NatNetML.FrameOfMocapData data, NatNetML.NatNetClientML client)
         {
@@ -363,34 +346,6 @@ namespace WOZconsole
 
 
 
-
-        /*static float[] transformation(float[] oldpos, float[] coordinatequat, float[] coordinatepos)
-        {
-           float[] position = coordinatepos;
-            Matrix4x4 final_rot = CreateFromQuaternion( coordinatequat);
-
-
-            float x = position[1];
-            float y = position[2];
-            float z = position[3];
-
-            var x_axis = final_rot[1, 0];
-            float y_axis = final_rot[Range.All, 1];
-            float z_axis = final_rot[Range.All, 2];
-
-
-            transmatrix =[x_axis';y_axis'; z_axis';[0 0 0]];
-
-
-
-            transmatrix=[transmatrix,[0 0 0 1]'];
-
-
-
-
-            return transmatrix * translation *[oldpos; 1]
-
-        }*/
 
 
     }
