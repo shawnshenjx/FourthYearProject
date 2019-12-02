@@ -5,9 +5,9 @@ close all
 addpath('Functions')
 
 
-addpath('Data')
+addpath('NEWDATA')
 % Open tracking log
-filename = 'dummy_trace.csv';
+filename = 'kb_shape_slowOP.csv';
 fid = fopen(filename);
 
 % Data to populate from file
@@ -30,11 +30,12 @@ while ischar(tline)
     % Assemble new data structure for sample
     data = struct;
     
-    
-    data.hmdPos = cols(7:9);
+
+    offset=[0 0.05 0.03];
+    data.hmdPos = (cols(7:9)-offset)*1000;
     data.hmdRot = cols(3:6);
     
-    data.mPos = cols(10:12);
+    data.mPos = cols(10:12)*1000;
     data.t = cols(2);
     
     % Append sample
@@ -44,14 +45,16 @@ while ischar(tline)
     tline = fgetl(fid);
 end
 
+
 N1 = size(tData,1);
 
 figure('Position',[100 100 800 800 ])
 grid on
 axis equal
 ax = gca;
+rotate3d on
 view(25, 25)
-axis([-0.5 0.5 -0.5 0.5  -0.5 0.5 ]*1)
+axis([-0.5 0.5 -0.5 0.5  -0.5 0.5 ]*50000)
 xlabel('x-axis')
 ylabel('y-axis')
 zlabel('z-axis')
@@ -62,7 +65,9 @@ hmdFrameH = plotFrame3([],[0 0 0],[1 0 0 0],[1 0 0 0]);
 
 mPosH = plot3(0,0,0,'ko','MarkerFaceColor','r');
 
-
+mtrace1=zeros(1);
+mtrace2=zeros(1);
+mtrace3=zeros(1);
 
 
 for i = 1:1:N1
@@ -74,6 +79,11 @@ for i = 1:1:N1
     mvector=transformation(data.mPos',data.hmdRot,data.hmdPos');
     set(mPosH,'XData',mvector(1),'YData',mvector(2),'ZData',mvector(3)); 
     
+    
+    mtrace1=[mtrace1,mvector(1)];
+    mtrace2=[mtrace2,mvector(2)];
+    mtrace3=[mtrace3,mvector(3)];
+    plot3(mtrace1(1,2:end),mtrace2(1,2:end),mtrace3(1,2:end))
     
     hmdFrameHH= transformation(data.hmdPos',data.hmdRot,data.hmdPos');
     
