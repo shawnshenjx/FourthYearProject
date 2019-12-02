@@ -301,6 +301,7 @@ m1PosH = plot3(0,0,0,'ko','MarkerFaceColor','b');
 m2PosH = plot3(0,0,0,'ko','MarkerFaceColor','g');
 
 
+
 N2 = size(tData1,1);
 
 N=min([N1 N2]);
@@ -376,6 +377,8 @@ for i = 1:1:N
     
     
     drawnow
+    
+    legend off
     
 
 end

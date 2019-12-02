@@ -63,6 +63,7 @@ namespace WOZconsole
                 Console.WriteLine("Success: Data Port Connected \n");
 
 
+
             }
 
 
@@ -194,13 +195,13 @@ namespace WOZconsole
                             float[] newmarkerpos1 = new float[3] { xpos, ypos, zpos };
 
 
-                            float[] kbquat = { 10, 20, 30 };
+                            float[] kbquat = { 10, 20, 30,21 };
                             float[] kbpos  = { 20, 30, 40 };
-
+                            float[] hmdquat = { 20, 30, 40 ,21};
 
                             object newmarkerpos2 = null;
 
-                            matlab.Feval("transformationLL",3, out newmarkerpos2, newmarkerpos1, kbquat, kbpos);
+                            matlab.Feval("transformationLL",3, out newmarkerpos2, newmarkerpos1, kbquat, hmdquat,kbpos);
 
                             object[] res1 = newmarkerpos2 as object[];
 

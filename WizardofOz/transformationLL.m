@@ -1,4 +1,4 @@
-function [newpos] = transformationLL(oldpos,coordinatequat,coordinatepos)
+function [newpos] = transformationLL(oldpos,coordinatequat,coordinate1quat,coordinatepos)
 
 
 
@@ -10,37 +10,20 @@ position=coordinatepos;
 q=coordinatequat;
 coordinatequat1=[q(1),q(2),-q(3),-q(4)];
 
+q=coordinate1quat;
 
-qq=coordinatequat1;
-
-angle = -30 * pi / 180;
-
-
-qw=qq(1);
-qx=qq(2);
-qy=qq(3);
-qz=qq(4);
-
-qRx = 0;
-qRy = sin(angle / 2);
-qRz = 0;
-qRw = cos(angle / 2);
-
-qxNew = qw*qRx + qx*qRw + qy*qRz - qz*qRy;
-qyNew = qw*qRy - qx*qRz + qy*qRw + qz*qRx;
-qzNew = qw*qRz + qx*qRy - qy*qRx + qz*qRw;
-qwNew = qw*qRw - qx*qRx - qy*qRy - qz*qRz;
+q2=[q(1),-q(2),q(3),q(4)];
 
 
-coordinatequat2=[qwNew,qxNew,qyNew,qzNew];
+coordinatequat2=coordinatequat1.*q2;
+
+
 final_rot= quat2rotm(coordinatequat2);
 
-% final_rot= quat2rotm(coordinatequat1);
-% [t1 ,t2, t3]=decompose_rotation(final_rot);
-% final_rot=compose_rotation(-t1, -t2 ,-t3);
 
 
 
+final_rot= quat2rotm(coordinatequat2);
 
 
 
