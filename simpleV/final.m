@@ -12,7 +12,7 @@ layoutFile = 'holokeyboard.txt';
 kbScale = 0.1;
 [keys] = parseLayout(layoutFile);
 
-filename = 'hello_world_slowOP.csv';
+filename = 'helloOP.csv';
 fid = fopen(filename);
 
 % Data to populate from file
@@ -59,7 +59,7 @@ N1 = size(tData,1);
 
 
 
-filename = 'hello_world_slow.csv';
+filename = 'hello.csv';
 
 
 
@@ -155,7 +155,10 @@ M = containers.Map(keySet,valueSet);
 
 
 
-C1= {'h','e','l','l','o','w','o','r','l','d'};
+% C1= {'h','e','l','l','o','w','o','r','l','d'};
+
+C1= {'h','e','l','l','o'};
+
 A1=size(C1);
 A1=A1(2);
 keySet1=strings(1,A1);
@@ -172,86 +175,87 @@ M3  = containers.Map(keySet1,valueSet1);
 
 % 
 % 
-% figure('Position',[100 100 800 800 ])
-% grid on
-% axis equal
-% ax = gca;
-% rotate3d on
-% view(360, -270)
-% axis([-0.5 0.5 -0.5 0.5  -0.5 0.5 ]*5000)
-% xlabel('x-axis')
-% ylabel('y-axis')
-% zlabel('z-axis')
-% 
-% hold on
-% 
-% 
-% mPosH = plot3(0,0,0,'ko','MarkerFaceColor','r');
-% 
-% 
-% N2 = size(tData1,1);
-% 
-% L=50;
-% index=1;
-% 
-% 
-% 
-% mtrace1=zeros(1);
-% mtrace2=zeros(1);
-% mtrace3=zeros(1);
-% 
-% for iK = 1:size(keys,1)
-%     key = keys(iK);
-%     keyPos = key.pos*kbScale;
-%     keyPosWorld = [keyPos(1); keyPos(2); 0; 1];
-%     plot3(keyPosWorld(1),keyPosWorld(2),keyPosWorld(3),'ro')
-%     text(keyPosWorld(1),keyPosWorld(2),keyPosWorld(3),key.label)
-% end
-% 
-% hold on
-% 
-% 
-% N=min([N1 N2]);
-% for i = 1:1:N
-%     data = tData(2*i);
-%     data1 = tData1(i);
-%    
-%     kbpos=transformationL(data1.kbPos',data1.hmdRot,data1.hmdPos');
-%    
-%     mvector1=transformation(data.mPos',data.hmdRot,data.hmdPos');
-%     mvector=transformationLL(mvector1(1:3),data1.kbRot,kbpos(1:3));
-%     mvector=[-mvector(1),mvector(2),mvector(3)]';
-% 
-%     
-%     set(mPosH,'XData',mvector(1),'YData',mvector(2),'ZData',mvector(3)); 
-% 
-%     
-%     mtrace1=[mtrace1,mvector(1)];
-%     mtrace2=[mtrace2,mvector(2)];
-%     mtrace3=[mtrace3,mvector(3)];
-%     plot3(mtrace1(1,2:end),mtrace2(1,2:end),mtrace3(1,2:end))
-%     
-%     
-%     drawnow
-%     
-%     keypos=cell2mat(M(M2(index)));
-% 
+figure('Position',[100 100 800 800 ])
+grid on
+axis equal
+ax = gca;
+rotate3d on
+view(360, -270)
+axis([-0.5 0.5 -0.5 0.5  -0.5 0.5 ]*500)
+xlabel('x-axis')
+ylabel('y-axis')
+zlabel('z-axis')
+
+hold on
+
+
+mPosH = plot3(0,0,0,'ko','MarkerFaceColor','r');
+
+
+N2 = size(tData1,1);
+
+L=30;
+index=1;
+
+
+
+mtrace1=zeros(1);
+mtrace2=zeros(1);
+mtrace3=zeros(1);
+
+for iK = 1:size(keys,1)
+    key = keys(iK);
+    keyPos = key.pos*kbScale;
+    keyPosWorld = [keyPos(1); keyPos(2); 0; 1];
+    plot3(keyPosWorld(1),keyPosWorld(2),keyPosWorld(3),'ro')
+    text(keyPosWorld(1),keyPosWorld(2),keyPosWorld(3),key.label)
+end
+
+hold on
+
+
+N=min([N1 N2]);
+for i = 1:1:N
+    data = tData(2*i);
+    data1 = tData1(i);
+   
+    kbpos=transformationL(data1.kbPos',data1.hmdRot,data1.hmdPos');
+   
+    mvector1=transformation(data.mPos',data.hmdRot,data.hmdPos');
+    mvector=transformationLL(mvector1(1:3),data1.kbRot,data1.hmdRot,kbpos(1:3));
+    mvector=[-mvector(1),mvector(2),mvector(3)]';
+
+    
+    set(mPosH,'XData',mvector(1),'YData',mvector(2),'ZData',mvector(3)); 
+
+    
+    mtrace1=[mtrace1,mvector(1)];
+    mtrace2=[mtrace2,mvector(2)];
+    mtrace3=[mtrace3,mvector(3)];
+    plot3(mtrace1(1,2:end),mtrace2(1,2:end),mtrace3(1,2:end))
+    
+    
+    drawnow
+    
+    keypos=cell2mat(M(M2(index)));
+
 %     keypos1=[keypos(1:2)*kbScale,0];
-%     
+    
 %     if norm(mvector(1:3)-keypos1')<L
-%         
-%         M2(index)
-%         index=index+1;
-%         
-%     end
-% 
-%     if index > A1
-%             break
-%     end
-% end
-% 
-% 
-% 
+    keypos1=keypos(1:2)*kbScale;
+    if norm(mvector(1:2)-keypos1')<L
+        M2(index)
+        index=index+1;
+        
+    end
+
+    if index > A1
+            break
+    end
+end
+
+
+
 
 
 
@@ -329,7 +333,7 @@ for i = 1:1:N
     kbpos=transformationL(data1.kbPos',data1.hmdRot,data1.hmdPos');
    
     mvector1=transformation(data.mPos',data.hmdRot,data.hmdPos');
-    mvector=transformationLL(mvector1(1:3),data1.kbRot,kbpos(1:3));
+    mvector=transformationLL(mvector1(1:3),data1.kbRot,data1.hmdRot,kbpos(1:3));
     mvector=[-mvector(1),mvector(2),mvector(3)]';
 
     
@@ -341,7 +345,7 @@ for i = 1:1:N
     plot3(mtrace1(1,2:end),mtrace2(1,2:end),mtrace3(1,2:end))
     
     m1vector1=transformationL(data1.m1Pos',data1.hmdRot,data1.hmdPos');
-    m1vector=transformationLL(m1vector1(1:3),data1.kbRot,kbpos(1:3));
+    m1vector=transformationLL(m1vector1(1:3),data1.kbRot,data1.hmdRot,kbpos(1:3));
     m1vector=[-m1vector(1),m1vector(2),m1vector(3)]';
 %     set(m1PosH,'XData',m1vector(1),'YData',m1vector(2),'ZData',m1vector(3)); 
     
@@ -354,7 +358,7 @@ for i = 1:1:N
     
     
     m2vector1=transformationL(data1.m2Pos',data1.hmdRot,data1.hmdPos');
-    m2vector=transformationLL(m2vector1(1:3),data1.kbRot,kbpos(1:3));
+    m2vector=transformationLL(m2vector1(1:3),data1.kbRot,data1.hmdRot,kbpos(1:3));
     m2vector=[-m2vector(1),m2vector(2),m2vector(3)]';
     set(m2PosH,'XData',m2vector(1),'YData',m2vector(2),'ZData',m2vector(3)); 
     
@@ -363,7 +367,7 @@ for i = 1:1:N
     m2trace3=[m2trace3,m2vector(3)];
     plot3(m2trace1(1,2:end),m2trace2(1,2:end),m2trace3(1,2:end))
     
-    kbFrameHH= transformationLL(kbpos(1:3),data1.kbRot,kbpos(1:3));
+    kbFrameHH= transformationLL(kbpos(1:3),data1.kbRot,data1.hmdRot,kbpos(1:3));
     
     
     kbFrameH = plotFrame3L(kbFrameH,kbFrameHH,data1.kbRot,data1.kbRot);
