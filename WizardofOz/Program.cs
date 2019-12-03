@@ -297,7 +297,7 @@ namespace WOZconsole
             bool inputReceived = true;
 
             Console.WriteLine(request);
-            reply = "kb_pose";
+            reply = Console.ReadLine();
             if (reply == "exit")
             {
                 inputReceived = false;
