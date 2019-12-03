@@ -11,7 +11,7 @@ Rot_inv=[q(1),-q(2),q(3),q(4)];
 
 
 q=kbquatold;
-kbquatold=[q(1),q(2),-q(3),-q(4)];
+kbquatold_inv=[q(1),-q(2),q(3),q(4)];
 
 
 
@@ -58,7 +58,7 @@ kbpos=transmatrix*translation*[kbPosold;1];
 kbpos=kbpos(1:3);
 
 
-kbquat=kbquatold.*Rot_inv;
+kbquat=kbquatold_inv.*Rot;
 
 
 

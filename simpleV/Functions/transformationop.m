@@ -18,8 +18,14 @@ Rotworld=qq.*Rot_inv;
 q1=Rotworld;
 
 
-Rotworld_inv=[q1(1),-q1(2),-q1(3),-q(4)];
+Rotworld_inv=[q1(1),-q1(2),-q1(3),-q1(4)];
 
+
+
+q1=kbquatold;
+
+
+kbquatold_inv=[q1(1),-q1(2),-q1(3),-q1(4)];
 
 
 
@@ -52,3 +58,4 @@ kbquat=kbquatold.*Rotworld_inv;
 
 
 end
+

@@ -12,7 +12,7 @@ layoutFile = 'holokeyboard.txt';
 kbScale = 0.1;
 [keys] = parseLayout(layoutFile);
 
-filename = 'kb_shape_slowOP.csv';
+filename = 'helloOP.csv';
 fid = fopen(filename);
 
 % Data to populate from file
@@ -36,8 +36,7 @@ while ischar(tline)
     data = struct;
     
 
-    offset=[0 0.05 0.03];
-    data.hmdPos = (cols(7:9)-offset)*1000;
+    data.hmdPos = cols(7:9)*1000;
     data.hmdRot = cols(3:6);
     
     data.mPos = cols(10:12)*1000;
@@ -59,7 +58,7 @@ N1 = size(tData,1);
 
 
 
-filename = 'kb_shape_slow.csv';
+filename = 'hello.csv';
 
 
 
@@ -281,7 +280,7 @@ axis equal
 ax = gca;
 rotate3d on
 view(360, -270)
-axis([-0.5 0.5 -0.5 0.5  -0.5 0.5 ]*5000)
+axis([-0.5 0.5 -0.5 0.5  -0.5 0.5 ]*500)
 xlabel('x-axis')
 ylabel('y-axis')
 zlabel('z-axis')
@@ -316,11 +315,12 @@ end
 
 data1 = tData1(1);
 
-data = tData1(1);
+data = tData(1);
 
 [kbpos,kbquat]=transformationholo(data1.kbPos',data1.kbRot,data1.hmdRot,data1.hmdPos');
 
-[kbposnew,kbquatnew]=transformationop(kbpos,kbquat,data.hmdRot,data.hmdPos);
+offset=[-20 -250 -40];
+[kbposnew,kbquatnew]=transformationop(kbpos,kbquat,data.hmdRot,data.hmdPos+offset);
 
 
 

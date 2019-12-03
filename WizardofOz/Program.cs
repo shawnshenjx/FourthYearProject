@@ -7,6 +7,7 @@ using NatNetML;
 using System;
 using System.Diagnostics;
 
+using System.Net.Sockets;
 
 
 
@@ -177,12 +178,15 @@ namespace WOZconsole
                             float[] rbquat = new float[4] { rbData.qx, rbData.qy, rbData.qz, rbData.qw };
                             float[] rbpos = new float[3] { rbData.x, rbData.y, rbData.z };
                             float[] mkpos = new float[3] { marker.x, marker.y, marker.z };
-                       
+                            float[] kbP = { 20, 30, 40, 21 };
+                            float[] kbQ = { 20, 30, 40, 21 };
+                            float[] hlPs = { 10, 20, 30, 21 };
+                            float[] hlQs = { 20, 30, 40 };
 
                             object newmarkerpos = null;
 
 
-                            matlab.Feval("transformation", 3,out newmarkerpos, mkpos, rbquat, rbpos);
+                            matlab.Feval("trans", 3,out newmarkerpos, mkpos, rbpos, rbquat, kbP, kbQ, hlPs, hlQs);
 
                             object[] res = newmarkerpos as object[];
 
@@ -195,29 +199,7 @@ namespace WOZconsole
                             float[] newmarkerpos1 = new float[3] { xpos, ypos, zpos };
 
 
-                            float[] kbquat = { 10, 20, 30,21 };
-                            float[] kbpos  = { 20, 30, 40 };
-                            float[] hmdquat = { 20, 30, 40 ,21};
-
-                            object newmarkerpos2 = null;
-
-                            matlab.Feval("transformationLL",3, out newmarkerpos2, newmarkerpos1, kbquat, hmdquat,kbpos);
-
-                            object[] res1 = newmarkerpos2 as object[];
-
-
-                            float xpos_new = Convert.ToSingle(res1[0]);
-                            float ypos_new = Convert.ToSingle(res1[1]);
-                            float zpos_new = Convert.ToSingle(res1[2]);
-
-                            float[] newmarkerpos3 = new float[3] { xpos_new, ypos_new, zpos_new };
-
-                            float[] keypos = new float[] { };
-
-                            
-
-
-                            
+      
 
                             object result1 = null;
 
@@ -244,8 +226,189 @@ namespace WOZconsole
             return index2;
         }
 
+        static void connectToHLServer()
+        {
+            // Obtain server ip address
+            string serverIpAddressRequest = "Enter Server IP Address then press Enter. Type 'exit' to quit.";
+            // Obtain server port number
+            string portNumberRequest = "Enter Server port then press Enter. Type 'exit' to quit.";
 
-        
+            string messageRequest = "\nEnter message then press Enter. Type 'exit' to quit.";
+
+            string serverIpAddressString = "";
+            string portNumberString = "";
+            string messageString = "";
+
+
+            if (!getInput(serverIpAddressRequest, out serverIpAddressString))
+            {
+                return;
+            }
+
+            if (!getInput(portNumberRequest, out portNumberString))
+            {
+                return;
+            }
+
+            int port = int.Parse(portNumberString);
+            TcpClient client = ConnectHL(serverIpAddressString, port);
+
+            if (!client.Connected)
+            {
+                Console.WriteLine("Failed to connect.");
+                return;
+            }
+
+            while (true)
+            {
+                if (!getInput(messageRequest, out messageString))
+                {
+                    client.Close();
+                    return;
+                }
+
+                // Reinterpret textual tabs and new lines
+                messageString = messageString.Replace("\\t", "\t");
+                messageString = messageString.Replace("\\n", Environment.NewLine);
+
+                // Send message to server
+                SendMessage(client, messageString);
+
+                // Read reply from server
+                ReadMessage(client);
+            }
+
+
+        }
+
+        static TcpClient Connect(String server, int port)
+        {
+            TcpClient client = new TcpClient();
+
+            try
+            {
+                client = new TcpClient(server, port);
+            }
+            catch (ArgumentNullException e)
+            {
+                Console.WriteLine("ArgumentNullException: {0}", e);
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine("SocketException: {0}", e);
+            }
+
+            return client;
+        }
+
+        private static bool getInput(string request, out string reply)
+        {
+            bool inputReceived = true;
+
+            Console.WriteLine(request);
+            reply = Console.ReadLine();
+            if (reply == "exit")
+            {
+                inputReceived = false;
+            }
+
+            return inputReceived;
+        }
+
+        static TcpClient ConnectHL(String server, int port)
+        {
+            TcpClient client = new TcpClient();
+
+            try
+            {
+                client = new TcpClient(server, port);
+            }
+            catch (ArgumentNullException e)
+            {
+                Console.WriteLine("ArgumentNullException: {0}", e);
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine("SocketException: {0}", e);
+            }
+
+            return client;
+        }
+
+
+        static void SendMessage(TcpClient client, string message)
+        {
+            // Translate the passed message into ASCII and store it as a Byte array.
+            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+
+            // Get a client stream for writing.
+            NetworkStream stream = client.GetStream();
+
+            // Send the message to the connected TcpServer. 
+            stream.Write(data, 0, data.Length);
+
+            // Report what was sent to console
+            Console.WriteLine("Sent: {0}", message);
+
+            // Flush the stream
+            stream.Flush();
+        }
+
+
+        static void ReadMessage(TcpClient client)
+        {
+            // Buffer to store the response bytes.
+            Byte[] data = new Byte[256];
+
+            // String to store the response ASCII representation.
+            String responseData = String.Empty;
+
+            // Get a client stream for writing.
+            NetworkStream stream = client.GetStream();
+
+            // Read the first batch of the TcpServer response bytes.
+            Int32 bytes = stream.Read(data, 0, data.Length);
+            responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+
+            // Report what was received to console
+            Console.WriteLine("Received: {0}", responseData);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         static void connectToServer()
         {
             /*  [NatNet] Instantiate the client object  */

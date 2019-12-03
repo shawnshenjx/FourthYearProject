@@ -36,8 +36,7 @@ while ischar(tline)
     data = struct;
     
 
-    offset=[0 0.05 0.03];
-    data.hmdPos = (cols(7:9)-offset)*1000;
+    data.hmdPos = cols(7:9)*1000;
     data.hmdRot = cols(3:6);
     
     data.mPos = cols(10:12)*1000;
@@ -281,7 +280,7 @@ axis equal
 ax = gca;
 rotate3d on
 view(360, -270)
-axis([-0.5 0.5 -0.5 0.5  -0.5 0.5 ]*5000)
+axis([-0.5 0.5 -0.5 0.5  -0.5 0.5 ]*500)
 xlabel('x-axis')
 ylabel('y-axis')
 zlabel('z-axis')
@@ -314,13 +313,14 @@ for iK = 1:size(keys,1)
 end
 
 
-data1 = tData1(50);
+data1 = tData1(1);
 
-data = tData1(50);
+data = tData(1);
 
 [kbpos,kbquat]=transformationholo(data1.kbPos',data1.kbRot,data1.hmdRot,data1.hmdPos');
 
-[kbposnew,kbquatnew]=transformationop(kbpos,kbquat,data.hmdRot,data.hmdPos');
+offset=[0 40 -50];
+[kbposnew,kbquatnew]=transformationop(kbpos,kbquat,data.hmdRot,data.hmdPos+offset);
 
 
 
