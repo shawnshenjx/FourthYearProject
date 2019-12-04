@@ -12,7 +12,7 @@ layoutFile = 'holokeyboard.txt';
 kbScale = 0.1;
 [keys] = parseLayout(layoutFile);
 
-filename = 'helloOP.csv';
+filename = 'kb_shape_slowOP.csv';
 fid = fopen(filename);
 
 % Data to populate from file
@@ -59,7 +59,7 @@ N1 = size(tData,1);
 
 
 
-filename = 'hello.csv';
+filename = 'kb_shape_slow.csv';
 
 
 
@@ -155,9 +155,9 @@ M = containers.Map(keySet,valueSet);
 
 
 
-% C1= {'h','e','l','l','o','w','o','r','l','d'};
+C1= {'h','e','l','l','o','w','o','r','l','d'};
 
-C1= {'h','e','l','l','o'};
+% C1= {'h','e','l','l','o'};
 
 A1=size(C1);
 A1=A1(2);
@@ -194,7 +194,7 @@ mPosH = plot3(0,0,0,'ko','MarkerFaceColor','r');
 
 N2 = size(tData1,1);
 
-L=30;
+L=1000;
 index=1;
 
 
@@ -219,9 +219,11 @@ for i = 1:1:N
     data = tData(2*i);
     data1 = tData1(i);
    
+    
+    datao = tData(1);
     kbpos=transformationL(data1.kbPos',data1.hmdRot,data1.hmdPos');
    
-    mvector1=transformation(data.mPos',data.hmdRot,data.hmdPos');
+    mvector1=transformation(data.mPos',datao.hmdRot,datao.hmdPos');
     mvector=transformationLL(mvector1(1:3),data1.kbRot,data1.hmdRot,kbpos(1:3));
     mvector=[-mvector(1),mvector(2),mvector(3)]';
 
@@ -326,10 +328,11 @@ for iK = 1:size(keys,1)
 end
 
 
-for i = 1:1:N
+for i = 1:10:N
     data = tData(2*i);
     data1 = tData1(i);
-   
+
+    
     kbpos=transformationL(data1.kbPos',data1.hmdRot,data1.hmdPos');
    
     mvector1=transformation(data.mPos',data.hmdRot,data.hmdPos');
@@ -379,6 +382,96 @@ for i = 1:1:N
     
 
 end
+
+
+
+
+
+
+figure('Position',[100 100 800 800 ])
+grid on
+axis equal
+ax = gca;
+rotate3d on
+view(360, -270)
+axis([-0.5 0.5 -0.5 0.5  -0.5 0.5 ]*500)
+xlabel('x-axis')
+ylabel('y-axis')
+zlabel('z-axis')
+
+hold on
+
+
+kbFrameH = plotFrame3([],[0 0 0],[1 0 0 0],[1 0 0 0]);
+
+mPosH = plot3(0,0,0,'ko','MarkerFaceColor','r');
+m1PosH = plot3(0,0,0,'ko','MarkerFaceColor','b');
+m2PosH = plot3(0,0,0,'ko','MarkerFaceColor','g');
+
+
+N2 = size(tData1,1);
+
+N=min([N1 N2]);
+mtrace1=zeros(1);
+mtrace2=zeros(1);
+mtrace3=zeros(1);
+
+
+
+
+for iK = 1:size(keys,1)
+    key = keys(iK);
+    keyPos = key.pos*kbScale;
+    keyPosWorld = [keyPos(1); keyPos(2); 0; 1];
+    plot3(keyPosWorld(1),keyPosWorld(2),keyPosWorld(3),'ro')
+    text(keyPosWorld(1),keyPosWorld(2),keyPosWorld(3),key.label)
+end
+
+
+data1 = tData1(1);
+
+data = tData1(1);
+
+kbpos=transformationL(data1.kbPos',data1.hmdRot,data1.hmdPos');
+x=data.hmdRot(1);
+y=data.hmdRot(2);
+z=data.hmdRot(3);
+w=data.hmdRot(4);
+
+hmdRotworld=[w,-x,-y,-z];
+
+
+kbposworld=transformationworld(data1.kbPos',hmdRotworld,-data.hmdPos');
+
+
+for i = 1:10:N
+    data = tData(2*i);
+    data1 = tData1(i);
+
+    
+    kbpos=transformationL(data1.kbPos',data1.hmdRot,data1.hmdPos');
+   
+    mvector1=transformation(data.mPos',data.hmdRot,data.hmdPos');
+    mvector=transformationLL(mvector1(1:3),data1.kbRot,data1.hmdRot,kbpos(1:3));
+    mvector=[-mvector(1),mvector(2),mvector(3)]';
+
+    
+    set(mPosH,'XData',mvector(1),'YData',mvector(2),'ZData',mvector(3)); 
+    
+    mtrace1=[mtrace1,mvector(1)];
+    mtrace2=[mtrace2,mvector(2)];
+    mtrace3=[mtrace3,mvector(3)];
+    plot3(mtrace1(1,2:end),mtrace2(1,2:end),mtrace3(1,2:end))
+    
+
+    
+    
+    
+    drawnow
+    
+
+end
+
 
 
 % HOLOLENS FRAME

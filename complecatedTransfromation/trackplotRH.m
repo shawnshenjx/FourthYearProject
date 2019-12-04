@@ -1,8 +1,9 @@
 clear all
 close all
 
+addpath('Functions')
 % Open tracking log
-filename = 'dummy_trace.csv';
+filename = 'hello_world_slowOP.csv';
 fid = fopen(filename);
 
 % Data to populate from file
@@ -26,10 +27,10 @@ while ischar(tline)
     data = struct;
     
     
-    data.hmdPos = cols(7:9);
+    data.hmdPos = cols(7:9)*1000;
     data.hmdRot = cols(3:6);
     
-    data.mPos = cols(10:12);
+    data.mPos = cols(10:12)*1000;
     data.t = cols(2);
     
     % Append sample
@@ -57,13 +58,22 @@ hmdFrameH = plotFrame([],[0 0 0],[1 0 0 0]); %why starts from zero
 
 mPosH = plot3(0,0,0,'ko','MarkerFaceColor','r');
 N = size(tData,1);
+mtrace1=zeros(1);
+mtrace2=zeros(1);
+mtrace3=zeros(1);
 
 % Loop over samples
 for i = 1:1:N
     data = tData(i);
-    set(mPosH,'XData',data.mPos(1)*1000,'YData',data.mPos(2)*1000,'ZData',data.mPos(3)*1000); 
+    set(mPosH,'XData',data.mPos(1),'YData',data.mPos(2),'ZData',data.mPos(3)); 
     
-    hmdFrameH = plotFrame(hmdFrameH,data.hmdPos*1000,data.hmdRot);
+    mtrace1=[mtrace1,data.mPos(1)];
+    mtrace2=[mtrace2,data.mPos(2)];
+    mtrace3=[mtrace3,data.mPos(3)];
+    
+    plot3(mtrace1(1,2:end),mtrace2(1,2:end),mtrace3(1,2:end))
+    
+    hmdFrameH = plotFrame(hmdFrameH,data.hmdPos,data.hmdRot);
     
     
     drawnow 

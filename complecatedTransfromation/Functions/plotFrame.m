@@ -12,7 +12,7 @@ z = position(3);
 origin = [ 0 0 0 ]';
 
 % Scale the axis lengths as required for visualisation
-uScale = 500;
+uScale = 5000;
 
 x_axis = uScale * [1 0 0]';
 y_axis = uScale * [0 1 0]';
