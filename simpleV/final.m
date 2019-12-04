@@ -303,6 +303,7 @@ m1PosH = plot3(0,0,0,'ko','MarkerFaceColor','b');
 m2PosH = plot3(0,0,0,'ko','MarkerFaceColor','g');
 
 
+
 N2 = size(tData1,1);
 
 N=min([N1 N2]);
@@ -380,6 +381,8 @@ for i = 1:10:N
     
     drawnow
     
+    legend off
+    
 
 end
 
@@ -388,6 +391,7 @@ end
 
 
 
+<<<<<<< HEAD
 figure('Position',[100 100 800 800 ])
 grid on
 axis equal
@@ -474,6 +478,8 @@ end
 
 
 
+=======
+>>>>>>> bf0612a54e3df887015490d5daf53b2b42c4048e
 % HOLOLENS FRAME
 
 % 
@@ -528,8 +534,6 @@ end
 %     
 % 
 % end
-
-
 
 
 

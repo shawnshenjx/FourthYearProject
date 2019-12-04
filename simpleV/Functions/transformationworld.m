@@ -1,4 +1,4 @@
-function [newpos] = transformation(oldpos,coordinatequat,coordinatepos)
+function [newpos] = transformationworld(oldpos,coordinatequat,coordinatepos)
 
 
 

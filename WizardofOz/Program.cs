@@ -7,9 +7,9 @@ using NatNetML;
 using System;
 using System.Diagnostics;
 
-
-
-
+using System.Net.Sockets;
+using System.Linq;
+using System.Timers;
 
 namespace WOZconsole
 
@@ -31,19 +31,38 @@ namespace WOZconsole
 
         /*  Lists and Hashtables for saving data descriptions   */
 
+
         private static List<RigidBody> mRigidBodies = new List<RigidBody>();
+        private static List<List<double>> HLdata = new List<List<double>>();
 
 
         /*  boolean value for detecting change in asset */
         private static bool mAssetChanged = false;
 
+        private static TcpClient client_;
 
-        static void Main(string[] args)
+        private static Timer aTimer;
+
+        private static void Main(string[] args)
         {
+
+            // Create a timer and set a two second interval.
+            aTimer = new System.Timers.Timer();
+            aTimer.Interval = 2000;
+
+            // Hook up the Elapsed event for the timer. 
+            aTimer.Elapsed += delegate { OnTimeEvent(client_); };
+
+            // Have the timer fire repeated events (true is the default)
+            aTimer.AutoReset = true;
+
+            // Start the timer
+            aTimer.Enabled = true;
+
             Console.WriteLine("SampleClientML managed client application starting...\n");
             /*  [NatNet] Initialize client object and connect to the server  */
             connectToServer();                          // Initialize a NatNetClient object and connect to a server.
-
+            connectToHLServer();
             Console.WriteLine("============================ SERVER DESCRIPTOR ================================\n");
             /*  [NatNet] Confirming Server Connection. Instantiate the server descriptor object and obtain the server description. */
             bool connectionConfirmed = fetchServerDescriptor();    // To confirm connection, request server description data
@@ -61,6 +80,7 @@ namespace WOZconsole
                 mNatNet.OnFrameReady += new NatNetML.FrameReadyEventHandler(fetchFrameData);
 
                 Console.WriteLine("Success: Data Port Connected \n");
+
 
 
             }
@@ -122,16 +142,28 @@ namespace WOZconsole
 
                 index = NatNetClient.processFrameData(data,  index);
 
-              
 
             }
         }
 
-        private static int processFrameData(NatNetML.FrameOfMocapData data, int index)
+
+
+        public static void OnTimeEvent(TcpClient client)
+        {
+
+            string messageString = "kb_pose";
+        // Send message to server
+            SendMessage(client, messageString);
+
+        // Read reply from server
+            ReadMessage(client);
+        }
+        static int processFrameData(NatNetML.FrameOfMocapData data, int index)
         {
             int index2 = 0;
 
-
+            
+ 
             string startupPath = Environment.CurrentDirectory;
             Console.WriteLine(startupPath);
             string pathCmd = string.Format("cd {0}/../../..", startupPath);
@@ -173,50 +205,31 @@ namespace WOZconsole
                             Console.WriteLine("\t\tpos ({0:N3}, {1:N3}, {2:N3})", rbData.x, rbData.y, rbData.z);
 
                             // Rigid Body Euler Orientation
-                            float[] rbquat = new float[4] { rbData.qx, rbData.qy, rbData.qz, rbData.qw };
-                            float[] rbpos = new float[3] { rbData.x, rbData.y, rbData.z };
-                            float[] mkpos = new float[3] { marker.x, marker.y, marker.z };
-                       
+                            double[] rbquat = new double[4] { rbData.qx, rbData.qy, rbData.qz, rbData.qw };
+                            double[] rbpos = new double[3] { rbData.x, rbData.y, rbData.z };
+                            double[] mkpos = new double[3] { marker.x, marker.y, marker.z };
+                            double[] kbP = new double[3] { HLdata[1][1], HLdata[1][2], HLdata[1][3] };
+                            double[] kbQ = new double[4] { HLdata[1][4], HLdata[1][5], HLdata[1][6] , HLdata[1][7] };
+                            double[] hlPs = new double[3] { HLdata[1][8], HLdata[1][9], HLdata[1][10] };
+                            double[] hlQs = new double[4] { HLdata[1][11], HLdata[1][12], HLdata[1][13] , HLdata[1][14] };
 
                             object newmarkerpos = null;
 
 
-                            matlab.Feval("transformation", 3,out newmarkerpos, mkpos, rbquat, rbpos);
+                            matlab.Feval("trans", 3,out newmarkerpos, mkpos, rbpos, rbquat, kbP, kbQ, hlPs, hlQs);
 
                             object[] res = newmarkerpos as object[];
 
 
-                            float xpos = Convert.ToSingle(res[0]);
-                            float ypos = Convert.ToSingle(res[1]);
-                            float zpos = Convert.ToSingle(res[2]);
+                            double xpos = Convert.ToDouble(res[0]);
+                            double ypos = Convert.ToDouble(res[1]);
+                            double zpos = Convert.ToDouble(res[2]);
 
 
-                            float[] newmarkerpos1 = new float[3] { xpos, ypos, zpos };
+                            double[] newmarkerpos1 = new double[3] { xpos, ypos, zpos };
 
 
-                            float[] kbquat = { 10, 20, 30 };
-                            float[] kbpos  = { 20, 30, 40 };
-
-
-                            object newmarkerpos2 = null;
-
-                            matlab.Feval("transformationLL",3, out newmarkerpos2, newmarkerpos1, kbquat, kbpos);
-
-                            object[] res1 = newmarkerpos2 as object[];
-
-
-                            float xpos_new = Convert.ToSingle(res1[0]);
-                            float ypos_new = Convert.ToSingle(res1[1]);
-                            float zpos_new = Convert.ToSingle(res1[2]);
-
-                            float[] newmarkerpos3 = new float[3] { xpos_new, ypos_new, zpos_new };
-
-                            float[] keypos = new float[] { };
-
-                            
-
-
-                            
+      
 
                             object result1 = null;
 
@@ -240,11 +253,156 @@ namespace WOZconsole
                 }
             }
 
-            return index2
+            return index2;
+        }
+
+        static void connectToHLServer()
+        {
+            // Obtain server ip address
+            string serverIpAddressRequest = "Enter Server IP Address then press Enter. Type 'exit' to quit.";
+            // Obtain server port number
+            string portNumberRequest = "Enter Server port then press Enter. Type 'exit' to quit.";
+
+            string messageRequest = "\nEnter message then press Enter. Type 'exit' to quit.";
+
+            string serverIpAddressString = "";
+            string portNumberString = "";
+            string messageString = "";
+
+
+            if (!getInput(serverIpAddressRequest, out serverIpAddressString))
+            {
+                return;
+            }
+
+            if (!getInput(portNumberRequest, out portNumberString))
+            {
+                return;
+            }
+
+            int port = int.Parse(portNumberString);
+            client_ = ConnectHL(serverIpAddressString, port);
+
+            if (!client_.Connected)
+            {
+                Console.WriteLine("Failed to connect.");
+                return;
+            }
+
+        }
+ 
+
+        static bool getInput(string request, out string reply)
+        {
+            bool inputReceived = true;
+
+            Console.WriteLine(request);
+            reply = Console.ReadLine();
+            if (reply == "exit")
+            {
+                inputReceived = false;
+            }
+
+            return inputReceived;
+        }
+
+        static TcpClient ConnectHL(String server, int port)
+        {
+            TcpClient client = new TcpClient();
+
+            try
+            {
+                client = new TcpClient(server, port);
+            }
+            catch (ArgumentNullException e)
+            {
+                Console.WriteLine("ArgumentNullException: {0}", e);
+            }
+            catch (SocketException e)
+            {
+                Console.WriteLine("SocketException: {0}", e);
+            }
+
+            return client;
         }
 
 
-        
+        static void SendMessage(TcpClient client, string message)
+        {
+            // Translate the passed message into ASCII and store it as a Byte array.
+            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+
+            // Get a client stream for writing.
+            NetworkStream stream = client.GetStream();
+
+            // Send the message to the connected TcpServer. 
+            stream.Write(data, 0, data.Length);
+
+           
+
+            // Report what was sent to console
+            Console.WriteLine("Sent: {0}", message);
+
+            // Flush the stream
+            stream.Flush();
+        }
+
+
+        static void ReadMessage(TcpClient client)
+        {
+            // Buffer to store the response bytes.
+            Byte[] data = new Byte[256];
+
+            // String to store the response ASCII representation.
+            String responseData = String.Empty;
+
+            // Get a client stvoidream for writing.
+            NetworkStream stream = client.GetStream();
+
+            // Read the first batch of the TcpServer response bytes.
+            Int32 bytes = stream.Read(data, 0, data.Length);
+            responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+
+            var parsed = Array.ConvertAll(responseData.Split(new[] { ',', }, StringSplitOptions.RemoveEmptyEntries),Double.Parse);
+
+            HLdata.Add(parsed.ToList());
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         static void connectToServer()
         {
             /*  [NatNet] Instantiate the client object  */
