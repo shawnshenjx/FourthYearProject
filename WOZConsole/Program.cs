@@ -135,9 +135,8 @@ namespace WOZconsole
        
             
 
-            
 
-            if (data.iFrame % 1000 == 0)
+            if (data.iFrame % 10 == 0)
             {
                 if (data.bRecording == false)
                     Console.WriteLine("Frame #{0} Received:", data.iFrame);
@@ -147,6 +146,13 @@ namespace WOZconsole
                 //Console.WriteLine(index);
                 index = NatNetClient.processFrameData(data, index);
                 //Console.WriteLine(index);
+                if (index>10)
+                {
+                    Console.Write("helloworld");
+                    mNatNet.OnFrameReady -= fetchFrameData;
+                }
+
+
 
             }
       
@@ -170,14 +176,12 @@ namespace WOZconsole
         }
         static int processFrameData(NatNetML.FrameOfMocapData data, int index)
         {
-            int index2 = 0;
-
-
-
+            int index2 = 1;
+                       
             string startupPath = Environment.CurrentDirectory;
-            Console.WriteLine(startupPath);
+            //Console.WriteLine(startupPath);
             string pathCmd = string.Format("cd {0}\\..\\..", startupPath);
-            Console.WriteLine(pathCmd);
+            //Console.WriteLine(pathCmd);
 
             // Create the MATLAB instance 
             MLApp.MLApp matlab = new MLApp.MLApp();
@@ -200,19 +204,19 @@ namespace WOZconsole
                         NatNetML.RigidBody rb = mRigidBodies[i];                // Saved rigid body descriptions
                         NatNetML.RigidBodyData rbData = data.RigidBodies[j];    // Received rigid body descriptions
 
-                        if (rbData.Tracked == true && HLdata.Count > 1)
+                        if (rbData.Tracked == true && HLdata.Count > 0 && index > 0)
                         {
 
 
                             NatNetML.Marker marker = data.LabeledMarkers[i];
 
                             int mID = marker.ID;
-                            Console.WriteLine("\tMarker ({0}):", mID);
-                            Console.WriteLine("\t\tpos ({0:N3}, {1:N3}, {2:N3})", marker.x, marker.y, marker.z);
+                            //Console.WriteLine("\tMarker ({0}):", mID);
+                            //Console.WriteLine("\t\tpos ({0:N3}, {1:N3}, {2:N3})", marker.x, marker.y, marker.z);
 
 
-                            Console.WriteLine("\tRigidBody ({0}):", rb.Name);
-                            Console.WriteLine("\t\tpos ({0:N3}, {1:N3}, {2:N3})", rbData.x, rbData.y, rbData.z);
+                            //Console.WriteLine("\tRigidBody ({0}):", rb.Name);
+                            //Console.WriteLine("\t\tpos ({0:N3}, {1:N3}, {2:N3})", rbData.x, rbData.y, rbData.z);
 
                             // Rigid Body Euler Orientation
                             double[] rbquat = new double[4] { rbData.qx, rbData.qy, rbData.qz, rbData.qw };
@@ -220,10 +224,10 @@ namespace WOZconsole
                             double[] mkpos = new double[3] { marker.x, marker.y, marker.z };
 
                             int idxHl = HLdata.Count - 1;
-                            double[] kbP = new double[3] { (double) HLdata[1][0], (double)HLdata[1][1], (double)HLdata[1][2] };
-                            double[] kbQ = new double[4] { (double)HLdata[1][3], (double)HLdata[1][4], (double)HLdata[1][5], (double)HLdata[1][6] };
-                            double[] hlPs = new double[3] { (double)HLdata[1][7], (double)HLdata[1][8], (double)HLdata[1][9] };
-                            double[] hlQs = new double[4] { (double)HLdata[1][10], (double)HLdata[1][11], (double)HLdata[1][12], (double)HLdata[1][13] };
+                            double[] kbP = new double[3] { (double) HLdata[idxHl][0], (double)HLdata[idxHl][1], (double)HLdata[idxHl][2] };
+                            double[] kbQ = new double[4] { (double)HLdata[idxHl][3], (double)HLdata[idxHl][4], (double)HLdata[idxHl][5], (double)HLdata[idxHl][6] };
+                            double[] hlPs = new double[3] { (double)HLdata[idxHl][7], (double)HLdata[idxHl][8], (double)HLdata[idxHl][9] };
+                            double[] hlQs = new double[4] { (double)HLdata[idxHl][10], (double)HLdata[idxHl][11], (double)HLdata[idxHl][12], (double)HLdata[idxHl][13] };
 
                             bool mlEval = true;
 
@@ -240,7 +244,7 @@ namespace WOZconsole
                                 //Console.WriteLine(Convert.ToSingle(res2[0]));
                                 //Console.WriteLine(res2[1]);
 
-                                matlab.Feval("trans2", 3, out newmarkerpos, mkpos, rbpos, rbquat, kbP, kbQ, hlPs, hlQs);
+                                matlab.Feval("trans", 3, out newmarkerpos, mkpos, rbpos, rbquat, kbP, kbQ, hlPs, hlQs);
 
                                 object[] res = newmarkerpos as object[];
 
@@ -271,12 +275,20 @@ namespace WOZconsole
                         }
                         else
                         {
-                            Console.WriteLine("\t{0} is not tracked in current frame", rb.Name);
+                            if (rbData.Tracked)
+                            {
+                                Console.WriteLine("\t HLData {0}, index {1}", HLdata.Count, index);
+                            }
+                            else
+                            {
+                                Console.WriteLine("\t{0} is not tracked in current frame", rb.Name);
+                            }
+                            
                         }
                     }
                 }
             }
-            Console.WriteLine(index2);
+            //Console.WriteLine(index2);
             return index2;
             
         }
@@ -347,7 +359,7 @@ namespace WOZconsole
 
 
             // Report what was sent to console
-            Console.WriteLine("Sent: {0}", message);
+            //Console.WriteLine("Sent: {0}", message);
 
             // Flush the stream
             stream.Flush();
@@ -372,7 +384,7 @@ namespace WOZconsole
             string[] cols = responseData.Split(new[] { ',', });
 
             if (cols.Length == 15) {
-                Console.WriteLine(responseData);
+                //Console.WriteLine(responseData);
 
                 var parsed = Array.ConvertAll(responseData.Split(new[] { ',', }, StringSplitOptions.RemoveEmptyEntries), Double.Parse);
 

@@ -21,8 +21,6 @@ height=C{5}(1);
 valueSet{1}{1} = [xcenter,ycenter,width,height];
 for i = 2:1:A(1)
     keySet(i)=C{1}{i};
-        
-
     xcenter=C{2}(i);
     ycenter=C{3}(i);
     width=C{4}(i);
@@ -52,9 +50,9 @@ M2  = containers.Map(valueSet1,keySet1);
 M3  = containers.Map(keySet1,valueSet1);
 
 
-L=5000;
+L=0.9;
 
-kbScale=0.1;
+kbScale=0.0001;
 
 keypos=cell2mat(M(M2(index)));
  

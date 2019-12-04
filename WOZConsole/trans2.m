@@ -105,9 +105,9 @@ kbquatold_inv=[q1(1),-q1(2),-q1(3),-q1(4)];
 
 final_rot= quat2rotm1(Rotworld);
 
-x = -Pos(1)+0.05;
-y = -Pos(2)+0.2;
-z = -Pos(3)-0.05;
+x = -Pos(1);
+y = -Pos(2);
+z = -Pos(3);
 
 x_axis = final_rot(:,1);
 y_axis = final_rot(:,2);
