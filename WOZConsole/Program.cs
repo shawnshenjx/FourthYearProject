@@ -1,183 +1,84 @@
-﻿
+﻿// Console application adapted from NatNet SDK SampleClientML.cs
+
+/* 
+Copyright © 2016 NaturalPoint Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License. */
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Numerics;
-
-using NatNetML;
-using System;
-using System.Diagnostics;
-
+using System.IO;
 using System.Net.Sockets;
-using System.Linq;
 using System.Timers;
+using NatNetML;
 
-namespace WOZconsole
-
+namespace CalibrationConsole
 {
-
-
-
-    class NatNetClient
+    class CalibrationClient
     {
-        /*  [NatNet] Network connection configuration    */
-        private static NatNetML.NatNetClientML mNatNet;    // The client instance
-        private static string mStrLocalIP = "127.0.0.1";   // Local IP address (string)
-        private static string mStrServerIP = "127.0.0.1";  // Server IP address (string)
-        private static NatNetML.ConnectionType mConnectionType = ConnectionType.Multicast; // Multicast or Unicast mode
-
-
-        /*  List for saving each of datadescriptors */
-        private static List<NatNetML.DataDescriptor> mDataDescriptor = new List<NatNetML.DataDescriptor>();
-
-        /*  Lists and Hashtables for saving data descriptions   */
-
-
-        private static List<RigidBody> mRigidBodies = new List<RigidBody>();
-        private static List<List<double>> HLdata = new List<List<double>>();
+        private HoloDataClient holoDataClient_ = null;
+        private NatNetClient natNetClient_ = null;
+        private string outputFile_ = "calibration_log";
+        private string outputFile_ = "markerandgaze";
+        private DateTime logStartTime_;
         private static int index = 1;
+        private static List<List<double>> HLdata = new List<List<double>>();
+        private static List<List<double>> OPdata = new List<List<double>>();
 
-        /*  boolean value for detecting change in asset */
-        private static bool mAssetChanged = false;
 
-        private static TcpClient client_;
-
-        private static Timer aTimer;
-
-        private static void Main(string[] args)
+        // Constructor
+        CalibrationClient(HoloDataClient holoDataClient, NatNetClient natNetClient)
         {
 
+
+
+
+            logStartTime_ = System.DateTime.Now;
+            outputFile_ = outputFile_ + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
+            WriteToLog("# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
+
+            holoDataClient_ = holoDataClient;
+            natNetClient_ = natNetClient;
+
+            holoDataClient_.StartFetchLoop(2000);
+            holoDataClient_.OnPoseUpdate = PoseDataReceived;
+
+            nnStartFetchLoop(20);
+
+        }
+
+
+
+        public void nnStartFetchLoop(int interval = 1000)
+        {
             // Create a timer and set a two second interval.
-            aTimer = new System.Timers.Timer();
-            aTimer.Interval = 2000;
+            System.Timers.Timer timer = new System.Timers.Timer();
+            timer.Interval = interval;
 
             // Hook up the Elapsed event for the timer. 
-            aTimer.Elapsed += delegate { OnTimeEvent(client_); };
-
-            // Have the timer fire repeated events (true is the default)
-            aTimer.AutoReset = true;
+            timer.Elapsed += ProcessAllData;
 
             // Start the timer
-            aTimer.Enabled = true;
-
-            Console.WriteLine("SampleClientML managed client application starting...\n");
-            /*  [NatNet] Initialize client object and connect to the server  */
-            connectToServer();                          // Initialize a NatNetClient object and connect to a server.
-            connectToHLServer();
-            Console.WriteLine("============================ SERVER DESCRIPTOR ================================\n");
-            /*  [NatNet] Confirming Server Connection. Instantiate the server descriptor object and obtain the server description. */
-            bool connectionConfirmed = fetchServerDescriptor();    // To confirm connection, request server description data
-
-            if (connectionConfirmed)                         // Once the connection is confirmed.
-            {
-                Console.WriteLine("============================= DATA DESCRIPTOR =================================\n");
-                Console.WriteLine("Now Fetching the Data Descriptor.\n");
-                fetchDataDescriptor();                  //Fetch and parse data descriptor
-
-                Console.WriteLine("============================= FRAME OF DATA ===================================\n");
-                Console.WriteLine("Now Fetching the Frame Data\n");
-
-                /*  [NatNet] Assigning a event handler function for fetching frame data each time a frame is received   */
-                mNatNet.OnFrameReady += new NatNetML.FrameReadyEventHandler(fetchFrameData);
-
-                Console.WriteLine("Success: Data Port Connected \n");
-
-
-
-            }
-
-
-
-            while (!(Console.KeyAvailable && Console.ReadKey().Key == ConsoleKey.Escape))
-            {
-                // Continuously listening for Frame data
-                // Enter ESC to exit
-
-                // Exception 
-
-                if (mAssetChanged == true)
-                {
-                    Console.WriteLine("\n===============================================================================\n");
-                    Console.WriteLine("Change in the list of the assets. Refetching the descriptions");
-
-                    /*  Clear out existing lists */
-                    mDataDescriptor.Clear();
-
-                    mRigidBodies.Clear();
-
-
-                    /* [NatNet] Re-fetch the updated list of descriptors  */
-                    fetchDataDescriptor();
-                    Console.WriteLine("===============================================================================\n");
-                    mAssetChanged = false;
-                }
-            }
-            /*  [NatNet] Disabling data handling function   */
-            mNatNet.OnFrameReady -= fetchFrameData;
-
-            /*  Clearing Saved Descriptions */
-            mRigidBodies.Clear();
-
-            mNatNet.Disconnect();
-        }
-
-
-        static void fetchFrameData(NatNetML.FrameOfMocapData data, NatNetML.NatNetClientML client)
-        {
-            
-            if ((data.bTrackingModelsChanged == true || data.nRigidBodies != mRigidBodies.Count))
-            {
-                mAssetChanged = true;
-            }
-
-            
-            /*  Processing */
-            
-       
-            
-
-
-            if (data.iFrame % 10 == 0)
-            {
-                if (data.bRecording == false)
-                    Console.WriteLine("Frame #{0} Received:", data.iFrame);
-                else if (data.bRecording == true)
-                    Console.WriteLine("[Recording] Frame #{0} Received:", data.iFrame);
-                
-                //Console.WriteLine(index);
-                index = NatNetClient.processFrameData(data, index);
-                //Console.WriteLine(index);
-                if (index>10)
-                {
-                    Console.Write("helloworld");
-                    mNatNet.OnFrameReady -= fetchFrameData;
-                }
-
-
-
-            }
-      
+            timer.Enabled = true;
         }
 
 
 
-        public static void OnTimeEvent(TcpClient client)
+        // Handle new pose update event
+        private void ProcessAllData()
         {
 
-            string messageString = "kb_cam_pose_data";
-
-            if (client != null && client.Connected)
-            {
-                // Send message to server
-                SendMessage(client, messageString);
-
-                // Read reply from server
-                ReadMessage(client);
-            }
-        }
-        static int processFrameData(NatNetML.FrameOfMocapData data, int index)
-        {
-            int index2 = 1;
-                       
             string startupPath = Environment.CurrentDirectory;
             //Console.WriteLine(startupPath);
             string pathCmd = string.Format("cd {0}\\..\\..", startupPath);
@@ -189,339 +90,134 @@ namespace WOZconsole
             // Change to the directory where the function is located 
             matlab.Execute(pathCmd);
 
+            NatNetClient.NatNetPoseData nnPoseData = natNetClient_.FetchFrameData();
 
-            Console.WriteLine("labeled markers: " + data.nMarkers);
+            index = handledata( nnPoseData, index);
 
-            /*  Parsing Rigid Body Frame Data   */
-            for (int i = 0; i < mRigidBodies.Count; i++)
+
+            if (index > 10)
             {
-                int rbID = mRigidBodies[i].ID;              // Fetching rigid body IDs from the saved descriptions
-
-                for (int j = 0; j < data.nRigidBodies; j++)
-                {
-                    if (rbID == data.RigidBodies[j].ID)      // When rigid body ID of the descriptions matches rigid body ID of the frame data.
-                    {
-                        NatNetML.RigidBody rb = mRigidBodies[i];                // Saved rigid body descriptions
-                        NatNetML.RigidBodyData rbData = data.RigidBodies[j];    // Received rigid body descriptions
-
-                        if (rbData.Tracked == true && HLdata.Count > 0 && index > 0)
-                        {
-
-
-                            NatNetML.Marker marker = data.LabeledMarkers[i];
-
-                            int mID = marker.ID;
-                            //Console.WriteLine("\tMarker ({0}):", mID);
-                            //Console.WriteLine("\t\tpos ({0:N3}, {1:N3}, {2:N3})", marker.x, marker.y, marker.z);
-
-
-                            //Console.WriteLine("\tRigidBody ({0}):", rb.Name);
-                            //Console.WriteLine("\t\tpos ({0:N3}, {1:N3}, {2:N3})", rbData.x, rbData.y, rbData.z);
-
-                            // Rigid Body Euler Orientation
-                            double[] rbquat = new double[4] { rbData.qx, rbData.qy, rbData.qz, rbData.qw };
-                            double[] rbpos = new double[3] { rbData.x, rbData.y, rbData.z };
-                            double[] mkpos = new double[3] { marker.x, marker.y, marker.z };
-
-                            int idxHl = HLdata.Count - 1;
-                            double[] kbP = new double[3] { (double) HLdata[idxHl][0], (double)HLdata[idxHl][1], (double)HLdata[idxHl][2] };
-                            double[] kbQ = new double[4] { (double)HLdata[idxHl][3], (double)HLdata[idxHl][4], (double)HLdata[idxHl][5], (double)HLdata[idxHl][6] };
-                            double[] hlPs = new double[3] { (double)HLdata[idxHl][7], (double)HLdata[idxHl][8], (double)HLdata[idxHl][9] };
-                            double[] hlQs = new double[4] { (double)HLdata[idxHl][10], (double)HLdata[idxHl][11], (double)HLdata[idxHl][12], (double)HLdata[idxHl][13] };
-
-                            bool mlEval = true;
-
-                            if (mlEval)
-                            {
-
-                                object newmarkerpos = null;
-
-                               // object result = null;
-                                //float[] A = { 1, 2 };
-                                //float[] B = { 2, 2 };
-                               // matlab.Feval("add", 1, out result, A, B);
-                                //object[] res2 = result as object[];
-                                //Console.WriteLine(Convert.ToSingle(res2[0]));
-                                //Console.WriteLine(res2[1]);
-
-                                matlab.Feval("trans", 3, out newmarkerpos, mkpos, rbpos, rbquat, kbP, kbQ, hlPs, hlQs);
-
-                                object[] res = newmarkerpos as object[];
-
-
-                                double xpos = Convert.ToDouble(res[0]);
-                                double ypos = Convert.ToDouble(res[1]);
-                                double zpos = Convert.ToDouble(res[2]);
-
-
-                                double[] newmarkerpos1 = new double[3] { xpos, ypos, zpos };
-
-
-
-
-                                object result1 = null;
-                                //Console.WriteLine(index);
-                                matlab.Feval("recognition", 2, out result1, newmarkerpos1, index);
-
-                                object[] res2 = result1 as object[];
-
-                                Console.WriteLine(res2[0]);
-                                Console.WriteLine(res2[1]);
-
-
-                                index2 = Convert.ToInt32(res2[0]);
-                            }
-
-                        }
-                        else
-                        {
-                            if (rbData.Tracked)
-                            {
-                                Console.WriteLine("\t HLData {0}, index {1}", HLdata.Count, index);
-                            }
-                            else
-                            {
-                                Console.WriteLine("\t{0} is not tracked in current frame", rb.Name);
-                            }
-                            
-                        }
-                    }
-                }
+                Console.Write("helloworld");
             }
-            //Console.WriteLine(index2);
-            return index2;
-            
+
+            LogData(nnPoseData);
+           
+
         }
 
-        static void connectToHLServer()
+        private void LogData(NatNetClient.NatNetPoseData nnPoseData)
         {
-            string serverIpAddressString = "192.168.1.101";
-            string portNumberString = "11001";
+            string log = "";
+            log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.x, nnPoseData.rbPos.y, nnPoseData.rbPos.z);
+            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
+            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
 
-            int port = int.Parse(portNumberString);
-            client_ = ConnectHL(serverIpAddressString, port);
 
-            if (!client_.Connected)
-            {
-                Console.WriteLine("Failed to connect.");
-                return;
-            }
+            // Add timestamp            
+            string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
+            log += string.Format("{0}", timestamp);
+
+            WriteToLogMRB(log);
+        }
+
+        private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index)
+        {
+            int idxHl = 0;
+
+            double[] rbpos = new double[3] { (double)HLdata[idxHl][0], (double)HLdata[idxHl][1], (double)HLdata[idxHl][2] };
+            double[] rbquat = new double[4] { (double)HLdata[idxHl][3], (double)HLdata[idxHl][4], (double)HLdata[idxHl][5], (double)HLdata[idxHl][6] };
+            double[] kbP = new double[3] { (double)HLdata[idxHl][0], (double)HLdata[idxHl][1], (double)HLdata[idxHl][2] };
+            double[] kbQ = new double[4] { (double)HLdata[idxHl][3], (double)HLdata[idxHl][4], (double)HLdata[idxHl][5], (double)HLdata[idxHl][6] };
+            double[] hlPs = new double[3] { (double)HLdata[idxHl][7], (double)HLdata[idxHl][8], (double)HLdata[idxHl][9] };
+            double[] hlQs = new double[4] { (double)HLdata[idxHl][10], (double)HLdata[idxHl][11], (double)HLdata[idxHl][12], (double)HLdata[idxHl][13] };
+
+
+            double[] mkpos = new double[3] { nnPoseData.mPos.x, nnPoseData.mPos.y, nnPoseData.mPos.z };
+
+
+            matlab.Feval("trans", 3, out newmarkerpos, mkpos, rbpos, rbquat, kbP, kbQ, hlPs, hlQs);
+            object[] res = newmarkerpos as object[];
+
+
+            double xpos = Convert.ToDouble(res[0]);
+            double ypos = Convert.ToDouble(res[1]);
+            double zpos = Convert.ToDouble(res[2]);
+
+
+            double[] newmarkerpos1 = new double[3] { xpos, ypos, zpos };
+
+
+            object result1 = null;
+            //Console.WriteLine(index);
+            matlab.Feval("recognition", 2, out result1, newmarkerpos1, index);
+
+            object[] res2 = result1 as object[];
+
+            Console.WriteLine(res2[0]);
+            Console.WriteLine(res2[1]);
+
+            index = Convert.ToInt32(res2[0]);
+            return index;
 
         }
 
 
-        static bool getInput(string request, out string reply)
+
+        // Handle new pose update event
+        private void PoseDataReceived(HoloDataClient.HoloPose poseData)
         {
-            bool inputReceived = true;
-
-            Console.WriteLine(request);
-            reply = Console.ReadLine();
-            if (reply == "exit")
-            {
-                inputReceived = false;
-            }
-
-            return inputReceived;
-        }
-
-        static TcpClient ConnectHL(String server, int port)
-        {
-            TcpClient client = new TcpClient();
-
-            try
-            {
-                client = new TcpClient(server, port);
-            }
-            catch (ArgumentNullException e)
-            {
-                Console.WriteLine("ArgumentNullException: {0}", e);
-            }
-            catch (SocketException e)
-            {
-                Console.WriteLine("SocketException: {0}", e);
-            }
-
-            return client;
-        }
-
-
-        static void SendMessage(TcpClient client, string message)
-        {
-            // Translate the passed message into ASCII and store it as a Byte array.
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
-
-            // Get a client stream for writing.
-            NetworkStream stream = client.GetStream();
-
-            // Send the message to the connected TcpServer. 
-            stream.Write(data, 0, data.Length);
-
-
-
-            // Report what was sent to console
-            //Console.WriteLine("Sent: {0}", message);
-
-            // Flush the stream
-            stream.Flush();
-        }
-
-
-        static void ReadMessage(TcpClient client)
-        {
-            // Buffer to store the response bytes.
-            Byte[] data = new Byte[256];
-
-            // String to store the response ASCII representation.
-            String responseData = String.Empty;
-
-            // Get a client stvoidream for writing.
-            NetworkStream stream = client.GetStream();
-
-            // Read the first batch of the TcpServer response bytes.
-            Int32 bytes = stream.Read(data, 0, data.Length);
-            responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-
-            string[] cols = responseData.Split(new[] { ',', });
-
-            if (cols.Length == 15) {
-                //Console.WriteLine(responseData);
-
-                var parsed = Array.ConvertAll(responseData.Split(new[] { ',', }, StringSplitOptions.RemoveEmptyEntries), Double.Parse);
-
-                HLdata.Add(parsed.ToList());
-            }
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        static void connectToServer()
-        {
-            /*  [NatNet] Instantiate the client object  */
-            mNatNet = new NatNetML.NatNetClientML();
-
-            /*  [NatNet] Checking verions of the NatNet SDK library  */
-            int[] verNatNet = new int[4];           // Saving NatNet SDK version number
-            verNatNet = mNatNet.NatNetVersion();
-            Console.WriteLine("NatNet SDK Version: {0}.{1}.{2}.{3}", verNatNet[0], verNatNet[1], verNatNet[2], verNatNet[3]);
-
-            /*  [NatNet] Connecting to the Server    */
-            Console.WriteLine("\nConnecting...\n\tLocal IP address: {0}\n\tServer IP Address: {1}\n\n", mStrLocalIP, mStrServerIP);
-
-            NatNetClientML.ConnectParams connectParams = new NatNetClientML.ConnectParams();
-            connectParams.ConnectionType = mConnectionType;
-            connectParams.ServerAddress = mStrServerIP;
-            connectParams.LocalAddress = mStrLocalIP;
-            mNatNet.Connect(connectParams);
-        }
-
-
-        static bool fetchServerDescriptor()
-        {
-            NatNetML.ServerDescription m_ServerDescriptor = new NatNetML.ServerDescription();
-            int errorCode = mNatNet.GetServerDescription(m_ServerDescriptor);
-
-            if (errorCode == 0)
-            {
-                Console.WriteLine("Success: Connected to the server\n");
-                parseSeverDescriptor(m_ServerDescriptor);
-                return true;
-            }
-            else
-            {
-                Console.WriteLine("Error: Failed to connect. Check the connection settings.");
-                Console.WriteLine("Program terminated (Enter ESC to exit)");
-                return false;
-            }
-        }
-
-        static void parseSeverDescriptor(NatNetML.ServerDescription server)
-        {
-            Console.WriteLine("Server Info:");
-            Console.WriteLine("\tHost: {0}", server.HostComputerName);
-            Console.WriteLine("\tApplication Name: {0}", server.HostApp);
-            Console.WriteLine("\tApplication Version: {0}.{1}.{2}.{3}", server.HostAppVersion[0], server.HostAppVersion[1], server.HostAppVersion[2], server.HostAppVersion[3]);
-            Console.WriteLine("\tNatNet Version: {0}.{1}.{2}.{3}\n", server.NatNetVersion[0], server.NatNetVersion[1], server.NatNetVersion[2], server.NatNetVersion[3]);
-        }
-
-        static void fetchDataDescriptor()
-        {
-            /*  [NatNet] Fetch Data Descriptions. Instantiate objects for saving data descriptions and frame data    */
-            bool result = mNatNet.GetDataDescriptions(out mDataDescriptor);
-            if (result)
-            {
-                Console.WriteLine("Success: Data Descriptions obtained from the server.");
-                parseDataDescriptor(mDataDescriptor);
-            }
-            else
-            {
-                Console.WriteLine("Error: Could not get the Data Descriptions");
-            }
             Console.WriteLine("\n");
+
+            Console.WriteLine("== HoloLens Data Update ==");
+            string display = "";
+            display += string.Format("\tpos ({0:N3}, {1:N3}, {2:N3})", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
+            display += string.Format("\t\trot ({0:N3}, {1:N3}, {2:N3}, {2:N3})", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
+            Console.WriteLine(display);
+
+
+            NatNetClient.NatNetPoseData nnPoseData = natNetClient_.FetchFrameData();                       
+
+            // Assemble log line
+            string log = "";            
+            log += string.Format("{0:F6},{1:F6},{2:F6},", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
+            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
+            log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z);
+            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
+
+            // Add timestamp            
+            string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
+
+            log += string.Format("{0}", timestamp);
+
+            WriteToLog(log);
+
+
+            List<string> hldata = new List<double>(poseData.kbPos.X, poseData.kbPos.Y, poseData.kbPos.Z, poseData.kbRot.W, poseData.kbRot.X, poseData.kbRot.Y, poseData.kbRot.Z,poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z, poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
+            List<string> opdata = new List<double>(nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z, nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
+            HLdata.Add(hldata);
+            OPdata.Add(opdata);
+
         }
 
-        static void parseDataDescriptor(List<NatNetML.DataDescriptor> description)
-        {
-            //  [NatNet] Request a description of the Active Model List from the server. 
-            //  This sample will list only names of the data sets, but you can access 
-            int numDataSet = description.Count;
-            Console.WriteLine("Total {0} data sets in the capture:", numDataSet);
-
-            for (int i = 0; i < numDataSet; ++i)
+        // Write line to output file
+        public void WriteToLog(string line)
+        {            
+            using (FileStream fs = new FileStream(outputFile_, FileMode.Append))
             {
-                int dataSetType = description[i].type;
-                // Parse Data Descriptions for each data sets and save them in the delcared lists and hashtables for later uses.
-                switch (dataSetType)
+                using (StreamWriter outputFile = new StreamWriter(fs))
                 {
-                    case ((int)NatNetML.DataDescriptorType.eMarkerSetData):
-                        NatNetML.MarkerSet mkset = (NatNetML.MarkerSet)description[i];
-                        Console.WriteLine("\tMarkerSet ({0})", mkset.Name);
-                        break;
+                    outputFile.WriteLine(line);
+                }
+            }
+        }
 
-                    case ((int)NatNetML.DataDescriptorType.eRigidbodyData):
-                        NatNetML.RigidBody rb = (NatNetML.RigidBody)description[i];
-                        Console.WriteLine("\tRigidBody ({0})", rb.Name);
-
-                        // Saving Rigid Body Descriptions
-                        mRigidBodies.Add(rb);
-                        break;
-
-                    default:
-                        // When a Data Set does not match any of the descriptions provided by the SDK.
-                        Console.WriteLine("\tError: Invalid Data Set");
-                        break;
+        public void WriteToLogMRB(string line)
+        {
+            using (FileStream fs = new FileStream(outputFile1_, FileMode.Append))
+            {
+                using (StreamWriter outputFile = new StreamWriter(fs))
+                {
+                    outputFile.WriteLine(line);
                 }
             }
         }
@@ -529,6 +225,36 @@ namespace WOZconsole
 
 
 
+
+        // Main function
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Calibration client starting...\n");
+
+            // Initialize HoloDataClient
+            HoloDataClient holoClient = new HoloDataClient();
+            holoClient.ConnectToServer("192.168.1.101",11001);
+            //holoClient.ConnectToServer("127.0.0.1", 11001);
+            
+            // Initialize NatNetClient
+            NatNetClient nnClient = new NatNetClient();
+            nnClient.Connect();
+
+            CalibrationClient calClient = new CalibrationClient(holoClient, nnClient);
+
+            Console.WriteLine("======================== STREAMING DATA (PRESS ESC TO EXIT) =====================\n");
+
+            // Infinite loop
+            while (!(Console.ReadKey().Key == ConsoleKey.Escape))
+            {
+                // Continuously listening for Frame data
+                // Enter ESC to exit
+            }
+
+            // Disconnect clients
+            holoClient.Disconnect();
+            nnClient.Disconnect();
+        }
 
     }
 }
