@@ -98,6 +98,7 @@ namespace CalibrationConsole
             if (index > 10)
             {
                 Console.Write("helloworld");
+                HoloDataClient_.sendhHoloLensData();
             }
 
             LogData(nnPoseData);

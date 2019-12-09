@@ -150,5 +150,21 @@ namespace CalibrationConsole
 
             return responseData;
         }
+
+
+        private void sendhHoloLensData()
+        {
+            try
+            {
+                SendMessage(client_, "kb_add_word\thelloworld");
+              
+            }
+            catch (SystemException exception)
+            {
+                Console.WriteLine("Exception: {0}", exception);
+            }
+        }
+
+
     }
 }
