@@ -30,7 +30,7 @@ namespace CalibrationConsole
         private HoloDataClient holoDataClient_ = null;
         private NatNetClient natNetClient_ = null;
         private string outputFile_ = "calibration_log";
-        private string outputFile_ = "markerandgaze";
+        private string outputFile1_ = "markerandgaze";
         private DateTime logStartTime_;
         private static int index = 1;
         private static List<List<double>> HLdata = new List<List<double>>();
@@ -40,9 +40,6 @@ namespace CalibrationConsole
         // Constructor
         CalibrationClient(HoloDataClient holoDataClient, NatNetClient natNetClient)
         {
-
-
-
 
             logStartTime_ = System.DateTime.Now;
             outputFile_ = outputFile_ + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
@@ -76,7 +73,7 @@ namespace CalibrationConsole
 
 
         // Handle new pose update event
-        private void ProcessAllData()
+        private void ProcessAllData(Object source, System.Timers.ElapsedEventArgs e)
         {
 
             string startupPath = Environment.CurrentDirectory;
@@ -98,7 +95,7 @@ namespace CalibrationConsole
             if (index > 10)
             {
                 Console.Write("helloworld");
-                HoloDataClient_.sendhHoloLensData();
+                holoDataClient_.SendhHoloLensData();
             }
 
             LogData(nnPoseData);
@@ -109,7 +106,7 @@ namespace CalibrationConsole
         private void LogData(NatNetClient.NatNetPoseData nnPoseData)
         {
             string log = "";
-            log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.x, nnPoseData.rbPos.y, nnPoseData.rbPos.z);
+            log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z);
             log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
             log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
 
@@ -123,6 +120,18 @@ namespace CalibrationConsole
 
         private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index)
         {
+
+            string startupPath = Environment.CurrentDirectory;
+            //Console.WriteLine(startupPath);
+            string pathCmd = string.Format("cd {0}\\..\\..", startupPath);
+            //Console.WriteLine(pathCmd);
+
+            // Create the MATLAB instance 
+            MLApp.MLApp matlab = new MLApp.MLApp();
+
+            // Change to the directory where the function is located 
+            matlab.Execute(pathCmd);
+
             int idxHl = 0;
 
             double[] rbpos = new double[3] { (double)HLdata[idxHl][0], (double)HLdata[idxHl][1], (double)HLdata[idxHl][2] };
@@ -133,8 +142,9 @@ namespace CalibrationConsole
             double[] hlQs = new double[4] { (double)HLdata[idxHl][10], (double)HLdata[idxHl][11], (double)HLdata[idxHl][12], (double)HLdata[idxHl][13] };
 
 
-            double[] mkpos = new double[3] { nnPoseData.mPos.x, nnPoseData.mPos.y, nnPoseData.mPos.z };
+            double[] mkpos = new double[3] { nnPoseData.mPos.X, nnPoseData.mPos.Y, nnPoseData.mPos.Z };
 
+            object newmarkerpos = null;
 
             matlab.Feval("trans", 3, out newmarkerpos, mkpos, rbpos, rbquat, kbP, kbQ, hlPs, hlQs);
             object[] res = newmarkerpos as object[];
@@ -193,8 +203,8 @@ namespace CalibrationConsole
             WriteToLog(log);
 
 
-            List<string> hldata = new List<double>(poseData.kbPos.X, poseData.kbPos.Y, poseData.kbPos.Z, poseData.kbRot.W, poseData.kbRot.X, poseData.kbRot.Y, poseData.kbRot.Z,poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z, poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
-            List<string> opdata = new List<double>(nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z, nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
+            List<double>hldata = new List<double>() { poseData.kbPos.X, poseData.kbPos.Y, poseData.kbPos.Z, poseData.kbRot.W, poseData.kbRot.X, poseData.kbRot.Y, poseData.kbRot.Z, poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z, poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z };
+            List<double> opdata = new List<double>() { nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z, nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z };
             HLdata.Add(hldata);
             OPdata.Add(opdata);
 
