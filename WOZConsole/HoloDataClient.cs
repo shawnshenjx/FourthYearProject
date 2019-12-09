@@ -152,7 +152,7 @@ namespace CalibrationConsole
         }
 
 
-        private void sendhHoloLensData()
+        public void SendhHoloLensData()
         {
             try
             {
