@@ -36,3 +36,15 @@ X:\shawnshenjx\Drive\Github\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole
 X:\shawnshenjx\Drive\Github\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.exe
 X:\shawnshenjx\Drive\Github\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.pdb
 X:\shawnshenjx\Drive\Github\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.csprojAssemblyReference.cache
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\bin\Debug\NatNetConsole.exe.config
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\bin\Debug\NatNetConsole.exe
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\bin\Debug\NatNetConsole.pdb
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\bin\Debug\NatNetML.dll
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\bin\Debug\NatNetML.xml
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.csprojAssemblyReference.cache
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\Interop.MLApp.dll
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.csproj.ResolveComReference.cache
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.csproj.CoreCompileInputs.cache
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.csproj.CopyComplete
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.exe
+C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.pdb

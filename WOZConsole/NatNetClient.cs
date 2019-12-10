@@ -77,7 +77,7 @@ namespace CalibrationConsole
 
             if (connected_)
             {
-                Console.WriteLine("== NatNet Data Update ==");
+                //Console.WriteLine("== NatNet Data Update ==");
                 NatNetML.FrameOfMocapData data = mNatNet.GetLastFrameOfData();
                 poseData = ProcessPoseData(data);
             }
@@ -94,7 +94,7 @@ namespace CalibrationConsole
             {
                 Marker marker = data.LabeledMarkers[i];
                 int mID = marker.ID;
-                Console.WriteLine("\tMarker ({0}): \t\tpos ({0:N3}, {1:N3}, {2:N3})", mID, marker.x, marker.y, marker.z);
+               // Console.WriteLine("\tMarker ({0}): \t\tpos ({0:N3}, {1:N3}, {2:N3})", mID, marker.x, marker.y, marker.z);
                 poseData.mPos = new Vector3(marker.x, marker.y, marker.z);
             }
 
@@ -132,7 +132,7 @@ namespace CalibrationConsole
                             string display = string.Format("\tRigidBody ({0}):", rb.Name);
                             display += string.Format("\t\tpos ({0:N3}, {1:N3}, {2:N3})", rbData.x, rbData.y, rbData.z);
                             display += string.Format("\t\tori ({0:N3}, {1:N3}, {2:N3})", xrot, yrot, zrot);
-                            Console.WriteLine(display);
+                            //Console.WriteLine(display);
                         }
                         else
                         {

@@ -29,8 +29,11 @@ namespace CalibrationConsole
     {
         private HoloDataClient holoDataClient_ = null;
         private NatNetClient natNetClient_ = null;
+        private MLApp.MLApp matlab_ = null;
         private string outputFile_ = "calibration_log";
         private string outputFile1_ = "markerandgaze";
+        private string outputFile2_ = "kbtrace";
+        private System.Timers.Timer timer_ = new System.Timers.Timer();
         private DateTime logStartTime_;
         private static int index = 1;
         private static List<List<double>> HLdata = new List<List<double>>();
@@ -44,6 +47,19 @@ namespace CalibrationConsole
             logStartTime_ = System.DateTime.Now;
             outputFile_ = outputFile_ + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
             WriteToLog("# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
+            outputFile1_ = outputFile1_ + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
+            outputFile2_ = outputFile2_ + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
+
+            // Create the MATLAB instance 
+            matlab_ = new MLApp.MLApp();
+            // Change to the directory where the function is located 
+            string startupPath = Environment.CurrentDirectory;            
+            string pathCmd = string.Format("cd {0}\\..\\..", startupPath);
+            matlab_.Execute(pathCmd);
+
+
+
+
 
             holoDataClient_ = holoDataClient;
             natNetClient_ = natNetClient;
@@ -51,7 +67,7 @@ namespace CalibrationConsole
             holoDataClient_.StartFetchLoop(2000);
             holoDataClient_.OnPoseUpdate = PoseDataReceived;
 
-            nnStartFetchLoop(20);
+            nnStartFetchLoop(100);
 
         }
 
@@ -60,14 +76,14 @@ namespace CalibrationConsole
         public void nnStartFetchLoop(int interval = 1000)
         {
             // Create a timer and set a two second interval.
-            System.Timers.Timer timer = new System.Timers.Timer();
-            timer.Interval = interval;
+            
+            timer_.Interval = interval;
 
             // Hook up the Elapsed event for the timer. 
-            timer.Elapsed += ProcessAllData;
+            timer_.Elapsed += ProcessAllData;
 
             // Start the timer
-            timer.Enabled = true;
+            timer_.Enabled = true;
         }
 
 
@@ -76,16 +92,7 @@ namespace CalibrationConsole
         private void ProcessAllData(Object source, System.Timers.ElapsedEventArgs e)
         {
 
-            string startupPath = Environment.CurrentDirectory;
-            //Console.WriteLine(startupPath);
-            string pathCmd = string.Format("cd {0}\\..\\..", startupPath);
-            //Console.WriteLine(pathCmd);
 
-            // Create the MATLAB instance 
-            MLApp.MLApp matlab = new MLApp.MLApp();
-
-            // Change to the directory where the function is located 
-            matlab.Execute(pathCmd);
 
             NatNetClient.NatNetPoseData nnPoseData = natNetClient_.FetchFrameData();
 
@@ -96,6 +103,7 @@ namespace CalibrationConsole
             {
                 Console.Write("helloworld");
                 holoDataClient_.SendhHoloLensData();
+                timer_.Enabled = false;
             }
 
             LogData(nnPoseData);
@@ -118,24 +126,31 @@ namespace CalibrationConsole
             WriteToLogMRB(log);
         }
 
+        private void LogKBData(double[] newmarkerpos1)
+        {
+            string log = "";
+            log += string.Format("{0:F6},{1:F6},{2:F6},", (double)newmarkerpos1[0], (double)newmarkerpos1[1], (double)newmarkerpos1[2]);
+    
+
+            // Add timestamp            
+            string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
+            log += string.Format("{0}", timestamp);
+
+            WriteToLogKB(log);
+        }
+
         private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index)
         {
-
-            string startupPath = Environment.CurrentDirectory;
-            //Console.WriteLine(startupPath);
-            string pathCmd = string.Format("cd {0}\\..\\..", startupPath);
-            //Console.WriteLine(pathCmd);
-
-            // Create the MATLAB instance 
-            MLApp.MLApp matlab = new MLApp.MLApp();
-
-            // Change to the directory where the function is located 
-            matlab.Execute(pathCmd);
-
             int idxHl = 0;
+            if (HLdata.Count == 0)
+            {
+                Console.Write('o');
+                return 1;
 
-            double[] rbpos = new double[3] { (double)HLdata[idxHl][0], (double)HLdata[idxHl][1], (double)HLdata[idxHl][2] };
-            double[] rbquat = new double[4] { (double)HLdata[idxHl][3], (double)HLdata[idxHl][4], (double)HLdata[idxHl][5], (double)HLdata[idxHl][6] };
+            }
+
+            double[] rbpos = new double[3] { (double)OPdata[idxHl][0], (double)OPdata[idxHl][1], (double)OPdata[idxHl][2] };
+            double[] rbquat = new double[4] { (double)OPdata[idxHl][3], (double)OPdata[idxHl][4], (double)OPdata[idxHl][5], (double)OPdata[idxHl][6] };
             double[] kbP = new double[3] { (double)HLdata[idxHl][0], (double)HLdata[idxHl][1], (double)HLdata[idxHl][2] };
             double[] kbQ = new double[4] { (double)HLdata[idxHl][3], (double)HLdata[idxHl][4], (double)HLdata[idxHl][5], (double)HLdata[idxHl][6] };
             double[] hlPs = new double[3] { (double)HLdata[idxHl][7], (double)HLdata[idxHl][8], (double)HLdata[idxHl][9] };
@@ -146,7 +161,7 @@ namespace CalibrationConsole
 
             object newmarkerpos = null;
 
-            matlab.Feval("trans", 3, out newmarkerpos, mkpos, rbpos, rbquat, kbP, kbQ, hlPs, hlQs);
+            matlab_.Feval("trans", 3, out newmarkerpos, mkpos, rbpos, rbquat, kbP, kbQ, hlPs, hlQs);
             object[] res = newmarkerpos as object[];
 
 
@@ -156,18 +171,21 @@ namespace CalibrationConsole
 
 
             double[] newmarkerpos1 = new double[3] { xpos, ypos, zpos };
-
+            LogKBData(newmarkerpos1);
 
             object result1 = null;
+           // Console.WriteLine('p');
             //Console.WriteLine(index);
-            matlab.Feval("recognition", 2, out result1, newmarkerpos1, index);
+            matlab_.Feval("recognition", 2, out result1, newmarkerpos1, index);
 
             object[] res2 = result1 as object[];
-
+            //Console.WriteLine('p');
             Console.WriteLine(res2[0]);
+            //Console.WriteLine('p');
             Console.WriteLine(res2[1]);
-
+            //Console.WriteLine('p');
             index = Convert.ToInt32(res2[0]);
+           // Console.WriteLine(index);
             return index;
 
         }
@@ -179,11 +197,11 @@ namespace CalibrationConsole
         {
             Console.WriteLine("\n");
 
-            Console.WriteLine("== HoloLens Data Update ==");
+            //Console.WriteLine("== HoloLens Data Update ==");
             string display = "";
             display += string.Format("\tpos ({0:N3}, {1:N3}, {2:N3})", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
             display += string.Format("\t\trot ({0:N3}, {1:N3}, {2:N3}, {2:N3})", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
-            Console.WriteLine(display);
+            //Console.WriteLine(display);
 
 
             NatNetClient.NatNetPoseData nnPoseData = natNetClient_.FetchFrameData();                       
@@ -208,6 +226,17 @@ namespace CalibrationConsole
             HLdata.Add(hldata);
             OPdata.Add(opdata);
 
+        }
+
+        public void WriteToLogKB(string line)
+        {
+            using (FileStream fs = new FileStream(outputFile2_, FileMode.Append))
+            {
+                using (StreamWriter outputFile = new StreamWriter(fs))
+                {
+                    outputFile.WriteLine(line);
+                }
+            }
         }
 
         // Write line to output file

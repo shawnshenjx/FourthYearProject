@@ -50,7 +50,7 @@ M2  = containers.Map(valueSet1,keySet1);
 M3  = containers.Map(keySet1,valueSet1);
 
 
-L=0.9;
+L=0.05;
 
 kbScale=0.0001;
 
@@ -58,7 +58,12 @@ keypos=cell2mat(M(M2(index)));
  
 keypos1=[keypos(1:2)*kbScale,0];
 
-keypos2=transpose(keypos1);
+a=keypos1(1);
+b=keypos1(2);
+c=keypos1(3);
+keypos2=transpose([-a ,b,c]);
+pos=transpose([pos(1),pos(2),pos(3)]);
+
 
 if norm(pos-keypos2) <L
         letter=M2(index);
