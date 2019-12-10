@@ -156,7 +156,7 @@ namespace CalibrationConsole
         {
             try
             {
-                SendMessage(client_, "kb_add_word\thelloworld");
+                SendMessage(client_, "kb_add_word\tplayful");
               
             }
             catch (SystemException exception)

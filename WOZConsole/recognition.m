@@ -36,7 +36,7 @@ M = containers.Map(keySet,valueSet);
 
 
 
-C1= {'h','e','l','l','o','w','o','r','l','d'};
+C1= {'p','l','a','y','f','u','l'};
 A1=size(C1);
 A1=A1(2);
 keySet1=strings(1,A1);
@@ -50,7 +50,7 @@ M2  = containers.Map(valueSet1,keySet1);
 M3  = containers.Map(keySet1,valueSet1);
 
 
-L=0.05;
+L=0.03;
 
 kbScale=0.0001;
 

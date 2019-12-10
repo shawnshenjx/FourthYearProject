@@ -67,7 +67,7 @@ namespace CalibrationConsole
             holoDataClient_.StartFetchLoop(2000);
             holoDataClient_.OnPoseUpdate = PoseDataReceived;
 
-            nnStartFetchLoop(100);
+            nnStartFetchLoop(20);
 
         }
 
@@ -99,9 +99,9 @@ namespace CalibrationConsole
             index = handledata( nnPoseData, index);
 
 
-            if (index > 10)
+            if (index > 7)
             {
-                Console.Write("helloworld");
+                Console.Write("playful");
                 holoDataClient_.SendhHoloLensData();
                 timer_.Enabled = false;
             }
