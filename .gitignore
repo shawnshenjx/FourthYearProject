@@ -1,6 +1,6 @@
-*/。vs/
-*/.obj/
-WOZConsole/.vs/NatNetConsole/v16/.suo
-WOZConsole/.vs/NatNetConsole/v16/Server/sqlite3/storage.ide-shm
-WOZConsole/.vs/NatNetConsole/v16/Server/sqlite3/storage.ide-wal
-*.sqlite
+*.suo
+*.user
+_ReSharper.*
+bin
+obj
+packages
