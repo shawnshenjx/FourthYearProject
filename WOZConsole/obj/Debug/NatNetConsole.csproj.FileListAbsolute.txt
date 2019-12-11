@@ -20,10 +20,6 @@ C:\Users\jjd50\Documents\Unity\arIME\WOZConsole\obj\Debug\NatNetConsole.csproj.C
 C:\Users\jjd50\Documents\Unity\arIME\WOZConsole\obj\Debug\NatNetConsole.csproj.CopyComplete
 C:\Users\jjd50\Documents\Unity\arIME\WOZConsole\obj\Debug\NatNetConsole.exe
 C:\Users\jjd50\Documents\Unity\arIME\WOZConsole\obj\Debug\NatNetConsole.pdb
-\\Mac\Home\Documents\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.csprojAssemblyReference.cache
-\\Mac\Home\Documents\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.csproj.ResolveComReference.cache
-\\Mac\Home\Documents\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.exe
-\\Mac\Home\Documents\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.pdb
 X:\shawnshenjx\Drive\Github\FourthYearProject\WOZConsole\obj\Debug\Interop.MLApp.dll
 X:\shawnshenjx\Drive\Github\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.csproj.ResolveComReference.cache
 X:\shawnshenjx\Drive\Github\FourthYearProject\WOZConsole\bin\Debug\NatNetConsole.exe.config
@@ -48,3 +44,4 @@ C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\NatNetConsol
 C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.csproj.CopyComplete
 C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.exe
 C:\Users\iis\Documents\Shawn\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.pdb
+\\Mac\Home\Documents\FourthYearProject\WOZConsole\obj\Debug\NatNetConsole.csproj.ResolveComReference.cache
