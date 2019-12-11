@@ -33,7 +33,7 @@ namespace CalibrationConsole
         private string outputFile_ = "calibration_log";
         private string outputFile1_ = "markerandgaze";
         private string outputFile2_ = "kbtrace";
-        private System.Timers.Timer timer_ = new System.Timers.Timer();
+        private System.Timers.Timer timer_ = null;
         private DateTime logStartTime_;
         private static int index = 1;
         private static List<List<double>> HLdata = new List<List<double>>();
@@ -56,18 +56,18 @@ namespace CalibrationConsole
             natNetClient_ = natNetClient;
         }
 
-        private static bool getInput(string request, out string reply)
+        private static string getInput(string request)
         {
-            bool inputReceived = true;
+            //bool inputReceived = true;
 
             Console.WriteLine(request);
-            reply = Console.ReadLine();
-            if (reply == "exit")
-            {
-                inputReceived = false;
-            }
+            string reply = Console.ReadLine();
+            //if (reply == "exit")
+            //{
+            //    inputReceived = false;
+            //}
 
-            return inputReceived;
+            return reply;
         }
 
 
@@ -75,14 +75,15 @@ namespace CalibrationConsole
         public void nnStartFetchLoop(int interval , string messageString)
         {
             // Create a timer and set a two second interval.
-            
+            timer_ = new System.Timers.Timer();
             timer_.Interval = interval;
 
             // Hook up the Elapsed event for the timer. 
             timer_.Elapsed += (source, e) => ProcessAllData(source, e, messageString);
 
             // Start the timer
-            timer_.Enabled = true;
+            //timer_.Enabled = true;
+            timer_.Start();
         }
 
 
@@ -116,10 +117,19 @@ namespace CalibrationConsole
 
             if (index > messageString.Length)
             {
-                Console.Write(messageString);
+                Console.WriteLine("Completed: " + messageString);
+                Console.WriteLine("===============================\n\n");
                 SendhHoloLensData(messageString);
                 timer_.Enabled = false;
+                timer_.Dispose();
                 checkend = false;
+
+                index = 1;
+                //Console.WriteLine("Enter new word");                
+                // Send message to server
+                string messageRequest = "Enter new word";
+                string newWord = getInput(messageRequest);
+                InterpretMessage(newWord);
             }
 
             LogData(nnPoseData);
@@ -155,15 +165,13 @@ namespace CalibrationConsole
             WriteToLogKB(log);
         }
 
-        private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index, string  messageString)
+        private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index, string targetWord)
         {
             int idxHl = 0;
             if (HLdata.Count == 0)
             {
-                Console.Write('o');
+                // Console.Write('o');
                 return 1;
-                
-                
             }
 
             double[] rbpos = new double[3] { (double)OPdata[idxHl][0], (double)OPdata[idxHl][1], (double)OPdata[idxHl][2] };
@@ -191,15 +199,17 @@ namespace CalibrationConsole
             LogKBData(newmarkerpos1);
 
             object result1 = null;
-           // Console.WriteLine('p');
+            // Console.WriteLine('p');
             //Console.WriteLine(index);
-            matlab_.Feval("recognitioncopy", 2, out result1, newmarkerpos1, index,messageString);
+            matlab_.Feval("recognitioncopy", 2, out result1, newmarkerpos1, index, targetWord);            
+            //matlab_.Feval("recognitioncopy", 3, out result1, newmarkerpos1, index, targetWord);
+            
 
             object[] res2 = result1 as object[];
             //Console.WriteLine('p');
-            Console.WriteLine(res2[0]);
+            //Console.WriteLine(res2[0]);
             //Console.WriteLine('p');
-            Console.WriteLine(res2[1]);
+            Console.WriteLine("result: " + res2[1]);            
             //Console.WriteLine('p');
             index = Convert.ToInt32(res2[0]);
            // Console.WriteLine(index);
@@ -212,7 +222,7 @@ namespace CalibrationConsole
         // Handle new pose update event
         private void PoseDataReceived(HoloDataClient.HoloPose poseData)
         {
-            Console.WriteLine("\n");
+            // Console.WriteLine("\n");
 
             //Console.WriteLine("== HoloLens Data Update ==");
             string display = "";
@@ -281,9 +291,6 @@ namespace CalibrationConsole
 
         public void InterpretMessage(string messageString)
         {
-
-
-
             logStartTime_ = System.DateTime.Now;
             outputFile_ = outputFile_ + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
             WriteToLog("# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
@@ -307,7 +314,7 @@ namespace CalibrationConsole
         {
 
             string messageRequest = "\nEnter message then press Enter. Type 'exit' to quit.";
-            string messageString = "";
+            //string messageString = "";
 
 
             // Initialize HoloDataClient
@@ -323,6 +330,15 @@ namespace CalibrationConsole
 
             Console.WriteLine("======================== STREAMING DATA (PRESS ESC TO EXIT) =====================\n");
 
+            //if (!getInput(messageRequest, out messageString))
+            //{
+            //    break;
+            //}
+
+            // Send message to server
+            string word = getInput(messageRequest);
+            calClient.InterpretMessage(word);
+
             // Infinite loop
             while (true)
             {
@@ -330,18 +346,7 @@ namespace CalibrationConsole
 
                 // Continuously listening for Frame data
                 // Enter ESC to exit
-                if (!getInput(messageRequest, out messageString))
-                {
 
-                    break;
-                }
-
-
-                
-
-             
-                // Send message to server
-                calClient.InterpretMessage( messageString);
 
 
             }
