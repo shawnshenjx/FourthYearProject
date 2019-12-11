@@ -1,5 +1,4 @@
-function [index, letter] = recognition(pos,index)
-
+function [index, letter] = recognitioncopy(pos,index,messageString)
 
 
 fileID = fopen('holokeyboard.txt','r');
@@ -35,8 +34,9 @@ M = containers.Map(keySet,valueSet);
 
 
 
-
-C1= {'p','l','a','y','f','u','l'};
+splitmessage=split(messageString,['']);
+C1= transpose(splitmessage(2:end-1));
+%C1={'h','o'};
 A1=size(C1);
 A1=A1(2);
 keySet1=strings(1,A1);
@@ -50,7 +50,7 @@ M2  = containers.Map(valueSet1,keySet1);
 M3  = containers.Map(keySet1,valueSet1);
 
 
-L=0.03;
+L=1;
 
 kbScale=0.0001;
 

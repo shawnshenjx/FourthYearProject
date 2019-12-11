@@ -1,4 +1,4 @@
-function [index, letter] = recognition(pos,index)
+function [index, letter] = recognition(pos,index,messageString)
 
 
 
@@ -35,8 +35,8 @@ M = containers.Map(keySet,valueSet);
 
 
 
-
-C1= {'p','l','a','y','f','u','l'};
+splitmessage=split(messageString,['']);
+C1= transpose(splitmessage(1:end-1));
 A1=size(C1);
 A1=A1(2);
 keySet1=strings(1,A1);
