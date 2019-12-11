@@ -38,7 +38,7 @@ namespace CalibrationConsole
         private static int index = 1;
         private static List<List<double>> HLdata = new List<List<double>>();
         private static List<List<double>> OPdata = new List<List<double>>();
-        private bool checkend = true;
+        //private bool checkend = true;
         //public string messageString = "";
 
 
@@ -102,6 +102,19 @@ namespace CalibrationConsole
         }
 
 
+        private void clearHoloLensData()
+        {
+            try
+            {
+                holoDataClient_.SendMessage("kb_clear");
+
+            }
+            catch (SystemException exception)
+            {
+                Console.WriteLine("Exception: {0}", exception);
+            }
+        }
+
 
 
         // Handle new pose update event
@@ -122,12 +135,14 @@ namespace CalibrationConsole
                 SendhHoloLensData(messageString);
                 timer_.Enabled = false;
                 timer_.Dispose();
-                checkend = false;
+                //checkend = false;
 
                 index = 1;
                 //Console.WriteLine("Enter new word");                
                 // Send message to server
                 string messageRequest = "Enter new word";
+
+                clearHoloLensData();
                 string newWord = getInput(messageRequest);
                 InterpretMessage(newWord);
             }
@@ -289,19 +304,21 @@ namespace CalibrationConsole
             }
         }
 
-        public void InterpretMessage(string messageString)
+        public void InterpretMessage(string messageString1)
         {
+            //Console.Write(messageString1);
             logStartTime_ = System.DateTime.Now;
-            outputFile_ = outputFile_ + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
+
+            outputFile_ = outputFile_ + logStartTime_.ToString("_yyMMdd_hhmmss") + messageString1+ ".csv";
             WriteToLog("# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
-            outputFile1_ = outputFile1_ + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
-            outputFile2_ = outputFile2_ + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
+            outputFile1_ = outputFile1_ + logStartTime_.ToString("_yyMMdd_hhmmss") + messageString1 + ".csv";
+            outputFile2_ = outputFile2_ + logStartTime_.ToString("_yyMMdd_hhmmss") + messageString1 + ".csv";
 
             holoDataClient_.StartFetchLoop(2000);
             holoDataClient_.OnPoseUpdate = PoseDataReceived;
 
-            nnStartFetchLoop(20, messageString);
-
+            nnStartFetchLoop(20, messageString1);
+            //Console.Write(messageString1);
             return;
 
 
@@ -340,15 +357,10 @@ namespace CalibrationConsole
             calClient.InterpretMessage(word);
 
             // Infinite loop
-            while (true)
+            while (!(Console.ReadKey().Key == ConsoleKey.Escape))
             {
-                calClient.checkend = true;
-
                 // Continuously listening for Frame data
                 // Enter ESC to exit
-
-
-
             }
 
             // Disconnect clients
