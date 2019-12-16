@@ -2,7 +2,7 @@ layoutFile = 'holokeyboard.txt';
 kbScale = 0.0001;
 [keys] = parseLayout(layoutFile);
 
-filename = 'kbtrace_191211_050654.csv';
+filename = 'kbtrace_191216_111939valuable.csv';
 fid = fopen(filename);
 
 % Data to populate from file

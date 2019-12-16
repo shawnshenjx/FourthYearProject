@@ -1,37 +1,7 @@
 function [index, letter] = recognitioncopy(pos,index,messageString)
 
 
-fileID = fopen('holokeyboard.txt','r');
-
-C = textscan(fileID,'%s %f %f %f %f','Delimiter',';');
-
-A=size(C{1});
-keySet=strings(1,A(1));
-
-
-keySet(1)=C{1}{1};
-valueSet=cell(1,A(1));
-
-xcenter=C{2}(1);
-ycenter=C{3}(1);
-width=C{4}(1);
-height=C{5}(1);
-
-valueSet{1}{1} = [xcenter,ycenter,width,height];
-for i = 2:1:A(1)
-    keySet(i)=C{1}{i};
-    xcenter=C{2}(i);
-    ycenter=C{3}(i);
-    width=C{4}(i);
-    height=C{5}(i);
-    
-    valueSet{i}{1} = [xcenter,ycenter,width,height];
-end
-
-
-
-M = containers.Map(keySet,valueSet);
-
+load('M.mat')
 
 
 splitmessage=split(messageString,['']);
@@ -50,7 +20,7 @@ M2  = containers.Map(valueSet1,keySet1);
 M3  = containers.Map(keySet1,valueSet1);
 
 
-L=1;
+L=0.1;
 
 kbScale=0.0001;
 
