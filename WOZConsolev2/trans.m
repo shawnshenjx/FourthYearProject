@@ -1,7 +1,7 @@
 
 function [x,y,z] = trans(mPts,pHmd,qHmd,kbP,kbQ,hlPs,hlQs)
 
-cal = [ -0.0202   -0.0726   -0.0692   -0.1497   -0.1248    0.0633];
+cal = [0.001203,-0.071733,-0.038141,-3.300962,-0.747955,1.157695];
 estCalHT = ht4x4([cal(1) cal(2) cal(3)], quaternion([cal(4) cal(5) cal(6)],'eulerd','XYZ','frame'));
 
 rbHT_final = ht4x4(pHmd,quaternion(qHmd));

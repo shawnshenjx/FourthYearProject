@@ -128,21 +128,22 @@ namespace CalibrationConsole
             index = handledata( nnPoseData, index, messageString);
 
 
-            if (index > messageString.Length)
+            if (index > messageString.Length+2)
             {
                 Console.WriteLine("Completed: " + messageString);
                 Console.WriteLine("===============================\n\n");
+                //clearHoloLensData();
                 SendhHoloLensData(messageString);
                 timer_.Enabled = false;
                 timer_.Dispose();
                 //checkend = false;
-
+                
                 index = 1;
                 //Console.WriteLine("Enter new word");                
                 // Send message to server
                 string messageRequest = "Enter new word";
 
-                clearHoloLensData();
+                
                 string newWord = getInput(messageRequest);
                 InterpretMessage(newWord);
             }
@@ -164,7 +165,7 @@ namespace CalibrationConsole
             string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
             log += string.Format("{0}", timestamp);
 
-            WriteToLogMRB(log);
+            //WriteToLogMRB(log);
         }
 
         private void LogKBData(double[] newmarkerpos1)
@@ -224,10 +225,22 @@ namespace CalibrationConsole
             //Console.WriteLine('p');
             //Console.WriteLine(res2[0]);
             //Console.WriteLine('p');
-            Console.WriteLine("result: " + res2[1]);            
+                       
             //Console.WriteLine('p');
+            
+
+            int preIndex = index;
             index = Convert.ToInt32(res2[0]);
-           // Console.WriteLine(index);
+
+            if (index == preIndex + 1)
+            {
+                Console.WriteLine("result: " + res2[1]);
+                //Console.WriteLine('p');
+            }
+
+
+
+            // Console.WriteLine(index);
             return index;
 
         }
@@ -240,27 +253,27 @@ namespace CalibrationConsole
             // Console.WriteLine("\n");
 
             //Console.WriteLine("== HoloLens Data Update ==");
-            string display = "";
-            display += string.Format("\tpos ({0:N3}, {1:N3}, {2:N3})", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
-            display += string.Format("\t\trot ({0:N3}, {1:N3}, {2:N3}, {2:N3})", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
+            //string display = "";
+            //display += string.Format("\tpos ({0:N3}, {1:N3}, {2:N3})", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
+            //display += string.Format("\t\trot ({0:N3}, {1:N3}, {2:N3}, {2:N3})", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
             //Console.WriteLine(display);
 
 
             NatNetClient.NatNetPoseData nnPoseData = natNetClient_.FetchFrameData();                       
 
-            // Assemble log line
-            string log = "";            
-            log += string.Format("{0:F6},{1:F6},{2:F6},", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
-            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
-            log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z);
-            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
+            //// Assemble log line
+            //string log = "";            
+            //log += string.Format("{0:F6},{1:F6},{2:F6},", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
+            //log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
+            //log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z);
+            //log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
 
-            // Add timestamp            
-            string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
+            //// Add timestamp            
+            //string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
 
-            log += string.Format("{0}", timestamp);
+            //log += string.Format("{0}", timestamp);
 
-            WriteToLog(log);
+            //WriteToLog(log);
 
 
             List<double>hldata = new List<double>() { poseData.kbPos.X, poseData.kbPos.Y, poseData.kbPos.Z, poseData.kbRot.W, poseData.kbRot.X, poseData.kbRot.Y, poseData.kbRot.Z, poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z, poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z };

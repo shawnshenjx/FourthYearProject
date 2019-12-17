@@ -5,7 +5,9 @@ load('M.mat')
 
 
 splitmessage=split(messageString,['']);
-C1= transpose(splitmessage(2:end-1));
+splitmessage(1)=cellstr('d');
+splitmessage(end)=cellstr('d');
+C1= transpose(splitmessage(1:end));
 %C1={'h','o'};
 A1=size(C1);
 A1=A1(2);
@@ -20,9 +22,11 @@ M2  = containers.Map(valueSet1,keySet1);
 M3  = containers.Map(keySet1,valueSet1);
 
 
-L=0.1;
-
+L=0.01;
+L_d=0.05;
 kbScale=0.0001;
+
+
 
 keypos=cell2mat(M(M2(index)));
  
@@ -32,15 +36,28 @@ a=keypos1(1);
 b=keypos1(2);
 c=keypos1(3);
 keypos2=transpose([-a ,b,c]);
-pos=transpose([pos(1),pos(2),pos(3)]);
+pos_d=transpose([pos(1),pos(2),pos(3)]);
 
+pos=transpose([pos(1),pos(2),0]);
 
-if norm(pos-keypos2) <L
-        letter=M2(index);
+down_key=transpose([0,-0.1,-0.15]);
+
+if or(and(index==1,norm(pos_d-down_key)<L_d),and(index==A1,norm(pos_d-down_key)<L_d))
+		letter=M2(index);
 		index=index+1 ;
 else
-        letter =[''];
+		letter =[''];
 end
+
+
+
+if and(norm(pos-keypos2) <L,index<A1)
+		letter=M2(index);
+		index=index+1 ;
+else
+		letter =[''];
+end
+
 
 end
 
