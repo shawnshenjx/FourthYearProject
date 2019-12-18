@@ -3,12 +3,12 @@ function [index, letter] = recognitioncopy(pos,index,messageString)
 
 load('M.mat')
 
-
+messageString= messageString(find(~isspace(messageString)));
 splitmessage=split(messageString,['']);
 splitmessage(1)=cellstr('d');
 splitmessage(end)=cellstr('d');
 C1= transpose(splitmessage(1:end));
-%C1={'h','o'};
+
 A1=size(C1);
 A1=A1(2);
 keySet1=strings(1,A1);
@@ -22,7 +22,7 @@ M2  = containers.Map(valueSet1,keySet1);
 M3  = containers.Map(keySet1,valueSet1);
 
 
-L=0.01;
+L=0.03;
 L_d=0.05;
 kbScale=0.0001;
 
@@ -40,7 +40,7 @@ pos_d=transpose([pos(1),pos(2),pos(3)]);
 
 pos=transpose([pos(1),pos(2),0]);
 
-down_key=transpose([0,-0.1,-0.15]);
+down_key=transpose([0,-0.1,-0.1]);
 
 if or(and(index==1,norm(pos_d-down_key)<L_d),and(index==A1,norm(pos_d-down_key)<L_d))
 		letter=M2(index);

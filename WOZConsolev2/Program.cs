@@ -38,6 +38,11 @@ namespace CalibrationConsole
         private static int index = 1;
         private static List<List<double>> HLdata = new List<List<double>>();
         private static List<List<double>> OPdata = new List<List<double>>();
+        private static List<string> phraselist = new List<string>();
+
+
+    
+
         //private bool checkend = true;
         //public string messageString = "";
 
@@ -45,6 +50,10 @@ namespace CalibrationConsole
         // Constructor
         CalibrationClient(HoloDataClient holoDataClient, NatNetClient natNetClient)
         {
+            phraselist.Add("hello world");
+            phraselist.Add("how are you");
+            phraselist.Add("very good");
+
             // Create the MATLAB instance 
             matlab_ = new MLApp.MLApp();
             // Change to the directory where the function is located 
@@ -61,13 +70,16 @@ namespace CalibrationConsole
             //bool inputReceived = true;
 
             Console.WriteLine(request);
+
             string reply = Console.ReadLine();
+            int no = Convert.ToInt32(reply);
             //if (reply == "exit")
             //{
             //    inputReceived = false;
             //}
+            string message = phraselist[no];
 
-            return reply;
+            return message;
         }
 
 
@@ -93,6 +105,19 @@ namespace CalibrationConsole
             try
             {
                 holoDataClient_.SendMessage( "kb_add_word\t"+messageString);
+
+            }
+            catch (SystemException exception)
+            {
+                Console.WriteLine("Exception: {0}", exception);
+            }
+        }
+
+        private void SendhHoloLensStimu(string messageString)
+        {
+            try
+            {
+                holoDataClient_.SendMessage("kb_stimulus\t" + messageString);
 
             }
             catch (SystemException exception)
@@ -127,10 +152,16 @@ namespace CalibrationConsole
 
             index = handledata( nnPoseData, index, messageString);
 
+            var words = messageString.Split(null);
+            int wordcount = words.Length;
 
-            if (index > messageString.Length+2)
+
+            int length = messageString.Length - wordcount+1;
+            
+            if (index > length + 2)
             {
                 Console.WriteLine("Completed: " + messageString);
+                Console.WriteLine("Char Count: "+length);
                 Console.WriteLine("===============================\n\n");
                 //clearHoloLensData();
                 SendhHoloLensData(messageString);
@@ -145,6 +176,7 @@ namespace CalibrationConsole
 
                 
                 string newWord = getInput(messageRequest);
+                SendhHoloLensStimu(newWord);
                 InterpretMessage(newWord);
             }
 
@@ -178,7 +210,7 @@ namespace CalibrationConsole
             string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
             log += string.Format("{0}", timestamp);
 
-            WriteToLogKB(log);
+            //WriteToLogKB(log);
         }
 
         private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index, string targetWord)
