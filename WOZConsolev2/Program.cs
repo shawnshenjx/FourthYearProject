@@ -80,6 +80,10 @@ namespace CalibrationConsole
 
             holoDataClient_ = holoDataClient;
             natNetClient_ = natNetClient;
+
+            // Start fetch loop for HL pose data (every 2s)
+            holoDataClient_.StartFetchLoop(2000);
+            holoDataClient_.OnPoseUpdate = PoseDataReceived;
         }
 
         private static string getInput(string request)
@@ -115,30 +119,12 @@ namespace CalibrationConsole
             timer_.Start();
         }
 
-        public void GetLastestHLdata()
+        public void GetLatestHLdata()
         {
             idxHl_ = HLdata.Count() - 1;
+
+            Console.WriteLine("Index HL_" + HLdata.Count());
         }
-
-        //public void LoopAdd(int interval)
-        //{
-        //     Create a timer and set a two second interval.
-        //    timer1_ = new System.Timers.Timer();
-        //    timer1_.Interval = interval;
-
-        //     Hook up the Elapsed event for the timer. 
-
-        //    timer1_.Elapsed += addone;
-        //     Start the timer
-        //    timer_.Enabled = true;
-        //    timer1_.Start();
-        //}
-
-        //private void addone(Object source, System.Timers.ElapsedEventArgs e)
-        //{
-        //    idxHl_ = idxHl_ + 1;
-        //}
-
 
         private List<string> ImportPhraseList(string path)
         {
@@ -202,8 +188,13 @@ namespace CalibrationConsole
             var words = messageString.Split(null);
             int wordcount = words.Length;
 
+            int length = messageString.Length - wordcount + 1;
 
-            int length = messageString.Length - wordcount+1;
+            // Special case if require spaces, don't subtract wordcount (i.e. n spaces)
+            if (requireSpaces_)
+            {
+                length = messageString.Length;
+            }            
             
             if (index > length + 2)
             {
@@ -213,7 +204,9 @@ namespace CalibrationConsole
                 Console.WriteLine("Completed: " + messageString);
                 Console.WriteLine("Char Count: "+length);
                 Console.WriteLine("===============================\n\n");
-                GetLastestHLdata();
+
+                // Increment index to update the KB pose based on latest data
+                GetLatestHLdata();
 
                 //clearHoloLensData();
                 SendhHoloLensData(messageString);
@@ -265,7 +258,7 @@ namespace CalibrationConsole
 
         private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index, string targetWord)
         {
-
+            //int idxhl = 0;
    
             if (HLdata.Count == 0)
             {
@@ -324,7 +317,7 @@ namespace CalibrationConsole
             
             if (index == preIndex + 1)
             {
-                Console.WriteLine("result: " + res2[1]);
+                Console.WriteLine("result: " + res2[1] + "\t[" + preIndex + "->" + index +"]");
 
                 // holoDataClient_.AddCharacter((string)res2[1]);
                 
@@ -346,32 +339,31 @@ namespace CalibrationConsole
         // Handle new pose update event
         private void PoseDataReceived(HoloDataClient.HoloPose poseData)
         {
-            // Console.WriteLine("\n");
-
-            //Console.WriteLine("== HoloLens Data Update ==");
-            //string display = "";
-            //display += string.Format("\tpos ({0:N3}, {1:N3}, {2:N3})", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
-            //display += string.Format("\t\trot ({0:N3}, {1:N3}, {2:N3}, {2:N3})", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
-            //Console.WriteLine(display);
-
-
+            // Fetch nnPose to be approx synchronised with HL pose
             NatNetClient.NatNetPoseData nnPoseData = natNetClient_.FetchFrameData();
 
-            // Assemble log line
-            string log = "";
-            log += string.Format("{0:F6},{1:F6},{2:F6},", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
-            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
-            log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z);
-            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
+            // Check that log file name has been initialized
+            if (eventLogFile_ != "")
+            {
+                // Assemble log line
+                string log = "";
+                log += string.Format("{0:F6},{1:F6},{2:F6},", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
+                log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
+                log += string.Format("{0:F6},{1:F6},{2:F6},", poseData.kbPos.X, poseData.kbPos.Y, poseData.kbPos.Z);
+                log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", poseData.kbRot.W, poseData.kbRot.X, poseData.kbRot.Y, poseData.kbRot.Z);
+                log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z);
+                log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
 
-            // Add timestamp            
-            string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
+                // Add timestamp            
+                string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
 
-            log += string.Format("{0}", timestamp);
+                log += string.Format("{0}", timestamp);
 
-            WriteToFile(eventLogFile_, log);
+                WriteToFile(eventLogFile_, log);
+            }
 
-            List<double>hldata = new List<double>() { poseData.kbPos.X, poseData.kbPos.Y, poseData.kbPos.Z, poseData.kbRot.W, poseData.kbRot.X, poseData.kbRot.Y, poseData.kbRot.Z, poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z, poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z };
+            // Append data to HL and OP data lists
+            List<double> hldata = new List<double>() { poseData.kbPos.X, poseData.kbPos.Y, poseData.kbPos.Z, poseData.kbRot.W, poseData.kbRot.X, poseData.kbRot.Y, poseData.kbRot.Z, poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z, poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z };
             List<double> opdata = new List<double>() { nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z, nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z };
             HLdata.Add(hldata);
             OPdata.Add(opdata);
@@ -403,13 +395,11 @@ namespace CalibrationConsole
             eventLogFile_ = eventLogFilePrefix_ + logSuffix;
 
             // Write header to event log file
-            WriteToFile(eventLogFile_, "# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
+            WriteToFile(eventLogFile_, "# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z, kb_pos_x,kb_pos_y,kb_pos_z,kb_rot_w,kb_rot_x,kb_rot_y,kb_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
 
             otLogFile_ = otLogFilePrefix_ + logSuffix;
             traceLogFile_ = traceLogFilePrefix_ + logSuffix;
 
-            holoDataClient_.StartFetchLoop(2000);
-            holoDataClient_.OnPoseUpdate = PoseDataReceived;
 
             nnStartFetchLoop(10, stimulus);
             //Console.Write(messageString1);
