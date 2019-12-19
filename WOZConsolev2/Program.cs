@@ -19,7 +19,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using System.Timers;
 using NatNetML;
 
@@ -30,29 +32,44 @@ namespace CalibrationConsole
         private HoloDataClient holoDataClient_ = null;
         private NatNetClient natNetClient_ = null;
         private MLApp.MLApp matlab_ = null;
-        private string outputFile_ = "calibration_log";
-        private string outputFile1_ = "markerandgaze";
-        private string outputFile2_ = "kbtrace";
+
+        // Keep spaces
+        private bool requireSpaces_ = false;
+
+        // Event log
+        private string eventLogFilePrefix_ = "event-log";
+        private string eventLogFile_ = "";
+
+        // Marker and gaze trace
+        private string otLogFilePrefix_ = "ot-log";
+        private string otLogFile_ = "";
+
+        // Trace in kb frame
+        private string traceLogFilePrefix_ = "kbtrace-log";
+        private string traceLogFile_ = "";
+
         private System.Timers.Timer timer_ = null;
+        private System.Timers.Timer timer1_ = null;
         private DateTime logStartTime_;
         private static int index = 1;
         private static List<List<double>> HLdata = new List<List<double>>();
         private static List<List<double>> OPdata = new List<List<double>>();
-        private static List<string> phraselist = new List<string>();
+        private static List<string> phraseList_ = new List<string>();
+        private static int idxHl_ = 0;
 
 
-    
 
         //private bool checkend = true;
         //public string messageString = "";
 
 
         // Constructor
-        CalibrationClient(HoloDataClient holoDataClient, NatNetClient natNetClient)
+        CalibrationClient(HoloDataClient holoDataClient, NatNetClient natNetClient, bool requireSpaces)
         {
-            phraselist.Add("hello world");
-            phraselist.Add("how are you");
-            phraselist.Add("very good");
+            requireSpaces_ = requireSpaces;
+            
+
+            phraseList_ = ImportPhraseList("phrase-list.txt");
 
             // Create the MATLAB instance 
             matlab_ = new MLApp.MLApp();
@@ -68,7 +85,7 @@ namespace CalibrationConsole
         private static string getInput(string request)
         {
             //bool inputReceived = true;
-
+            Console.WriteLine("====================");
             Console.WriteLine(request);
 
             string reply = Console.ReadLine();
@@ -77,7 +94,7 @@ namespace CalibrationConsole
             //{
             //    inputReceived = false;
             //}
-            string message = phraselist[no];
+            string message = phraseList_[no];
 
             return message;
         }
@@ -98,7 +115,52 @@ namespace CalibrationConsole
             timer_.Start();
         }
 
+        public void GetLastestHLdata()
+        {
+            idxHl_ = HLdata.Count() - 1;
+        }
 
+        //public void LoopAdd(int interval)
+        //{
+        //     Create a timer and set a two second interval.
+        //    timer1_ = new System.Timers.Timer();
+        //    timer1_.Interval = interval;
+
+        //     Hook up the Elapsed event for the timer. 
+
+        //    timer1_.Elapsed += addone;
+        //     Start the timer
+        //    timer_.Enabled = true;
+        //    timer1_.Start();
+        //}
+
+        //private void addone(Object source, System.Timers.ElapsedEventArgs e)
+        //{
+        //    idxHl_ = idxHl_ + 1;
+        //}
+
+
+        private List<string> ImportPhraseList(string path)
+        {
+            string test = File.ReadAllText(path);
+            string[] lineSep = new string[] { "\r\n", "\n" };
+            string[] lines = test.Split(lineSep, StringSplitOptions.RemoveEmptyEntries);
+
+            List<string> phrases = new List<string>();
+
+            // Loop over lines
+            foreach (string l in lines)
+            {
+                // Split on tab
+                string[] lSplit = l.Split('\t');
+                if (lSplit.Length == 2)
+                {
+                    phrases.Add(lSplit[1]);
+                }
+            }
+
+            return phrases;
+        }
 
         private void SendhHoloLensData(string messageString)
         {
@@ -113,20 +175,6 @@ namespace CalibrationConsole
             }
         }
 
-        private void SendhHoloLensStimu(string messageString)
-        {
-            try
-            {
-                holoDataClient_.SendMessage("kb_stimulus\t" + messageString);
-
-            }
-            catch (SystemException exception)
-            {
-                Console.WriteLine("Exception: {0}", exception);
-            }
-        }
-
-
         private void clearHoloLensData()
         {
             try
@@ -140,8 +188,7 @@ namespace CalibrationConsole
             }
         }
 
-
-
+   
         // Handle new pose update event
         private void ProcessAllData(Object source, System.Timers.ElapsedEventArgs e, string messageString)
         {
@@ -160,9 +207,14 @@ namespace CalibrationConsole
             
             if (index > length + 2)
             {
+                // Update done key
+                holoDataClient_.UpdateDoneKeyState(2);
+
                 Console.WriteLine("Completed: " + messageString);
                 Console.WriteLine("Char Count: "+length);
                 Console.WriteLine("===============================\n\n");
+                GetLastestHLdata();
+
                 //clearHoloLensData();
                 SendhHoloLensData(messageString);
                 timer_.Enabled = false;
@@ -175,14 +227,11 @@ namespace CalibrationConsole
                 string messageRequest = "Enter new word";
 
                 
-                string newWord = getInput(messageRequest);
-                SendhHoloLensStimu(newWord);
-                InterpretMessage(newWord);
+                string newWord = getInput(messageRequest);                
+                NewPhrase(newWord);
             }
 
             LogData(nnPoseData);
-           
-
         }
 
         private void LogData(NatNetClient.NatNetPoseData nnPoseData)
@@ -190,14 +239,14 @@ namespace CalibrationConsole
             string log = "";
             log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z);
             log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
-            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
-
+            log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.mPos.X, nnPoseData.mPos.Y, nnPoseData.mPos.Z);
 
             // Add timestamp            
             string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
             log += string.Format("{0}", timestamp);
 
             //WriteToLogMRB(log);
+            WriteToFile(otLogFile_, log);
         }
 
         private void LogKBData(double[] newmarkerpos1)
@@ -211,24 +260,25 @@ namespace CalibrationConsole
             log += string.Format("{0}", timestamp);
 
             //WriteToLogKB(log);
+            WriteToFile(traceLogFile_, log);
         }
 
         private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index, string targetWord)
         {
-            int idxHl = 0;
+
+   
             if (HLdata.Count == 0)
             {
                 // Console.Write('o');
                 return 1;
             }
 
-            double[] rbpos = new double[3] { (double)OPdata[idxHl][0], (double)OPdata[idxHl][1], (double)OPdata[idxHl][2] };
-            double[] rbquat = new double[4] { (double)OPdata[idxHl][3], (double)OPdata[idxHl][4], (double)OPdata[idxHl][5], (double)OPdata[idxHl][6] };
-            double[] kbP = new double[3] { (double)HLdata[idxHl][0], (double)HLdata[idxHl][1], (double)HLdata[idxHl][2] };
-            double[] kbQ = new double[4] { (double)HLdata[idxHl][3], (double)HLdata[idxHl][4], (double)HLdata[idxHl][5], (double)HLdata[idxHl][6] };
-            double[] hlPs = new double[3] { (double)HLdata[idxHl][7], (double)HLdata[idxHl][8], (double)HLdata[idxHl][9] };
-            double[] hlQs = new double[4] { (double)HLdata[idxHl][10], (double)HLdata[idxHl][11], (double)HLdata[idxHl][12], (double)HLdata[idxHl][13] };
-
+            double[] rbpos = new double[3] { (double)OPdata[idxHl_][0], (double)OPdata[idxHl_][1], (double)OPdata[idxHl_][2] };
+            double[] rbquat = new double[4] { (double)OPdata[idxHl_][3], (double)OPdata[idxHl_][4], (double)OPdata[idxHl_][5], (double)OPdata[idxHl_][6] };
+            double[] kbP = new double[3] { (double)HLdata[idxHl_][0], (double)HLdata[idxHl_][1], (double)HLdata[idxHl_][2] };
+            double[] kbQ = new double[4] { (double)HLdata[idxHl_][3], (double)HLdata[idxHl_][4], (double)HLdata[idxHl_][5], (double)HLdata[idxHl_][6] };
+            double[] hlPs = new double[3] { (double)HLdata[idxHl_][7], (double)HLdata[idxHl_][8], (double)HLdata[idxHl_][9] };
+            double[] hlQs = new double[4] { (double)HLdata[idxHl_][10], (double)HLdata[idxHl_][11], (double)HLdata[idxHl_][12], (double)HLdata[idxHl_][13] };
 
             double[] mkpos = new double[3] { nnPoseData.mPos.X, nnPoseData.mPos.Y, nnPoseData.mPos.Z };
 
@@ -249,9 +299,17 @@ namespace CalibrationConsole
             object result1 = null;
             // Console.WriteLine('p');
             //Console.WriteLine(index);
-            matlab_.Feval("recognitioncopy", 2, out result1, newmarkerpos1, index, targetWord);            
-            //matlab_.Feval("recognitioncopy", 3, out result1, newmarkerpos1, index, targetWord);
-            
+            //matlab_.Feval("recognitioncopy", 2, out result1, newmarkerpos1, index, targetWord); 
+            string testPhrase = targetWord;
+            if (requireSpaces_)
+            {
+                testPhrase= testPhrase.Replace(' ', '_');
+            }
+            //Console.WriteLine(testPhrase);
+            //Console.WriteLine(requireSpaces_);
+            matlab_.Feval("recognitioncopy", 2, out result1, newmarkerpos1, index, testPhrase.ToLower());
+
+
 
             object[] res2 = result1 as object[];
             //Console.WriteLine('p');
@@ -263,11 +321,17 @@ namespace CalibrationConsole
 
             int preIndex = index;
             index = Convert.ToInt32(res2[0]);
-
+            
             if (index == preIndex + 1)
             {
                 Console.WriteLine("result: " + res2[1]);
-                //Console.WriteLine('p');
+
+                // holoDataClient_.AddCharacter((string)res2[1]);
+                
+                if (preIndex == 1)
+                {
+                    holoDataClient_.UpdateDoneKeyState(1);
+                }
             }
 
 
@@ -291,78 +355,63 @@ namespace CalibrationConsole
             //Console.WriteLine(display);
 
 
-            NatNetClient.NatNetPoseData nnPoseData = natNetClient_.FetchFrameData();                       
+            NatNetClient.NatNetPoseData nnPoseData = natNetClient_.FetchFrameData();
 
-            //// Assemble log line
-            //string log = "";            
-            //log += string.Format("{0:F6},{1:F6},{2:F6},", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
-            //log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
-            //log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z);
-            //log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
+            // Assemble log line
+            string log = "";
+            log += string.Format("{0:F6},{1:F6},{2:F6},", poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z);
+            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z);
+            log += string.Format("{0:F6},{1:F6},{2:F6},", nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z);
+            log += string.Format("{0:F8},{1:F8},{2:F8},{3:F8},", nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z);
 
-            //// Add timestamp            
-            //string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
+            // Add timestamp            
+            string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
 
-            //log += string.Format("{0}", timestamp);
+            log += string.Format("{0}", timestamp);
 
-            //WriteToLog(log);
-
+            WriteToFile(eventLogFile_, log);
 
             List<double>hldata = new List<double>() { poseData.kbPos.X, poseData.kbPos.Y, poseData.kbPos.Z, poseData.kbRot.W, poseData.kbRot.X, poseData.kbRot.Y, poseData.kbRot.Z, poseData.camPos.X, poseData.camPos.Y, poseData.camPos.Z, poseData.camRot.W, poseData.camRot.X, poseData.camRot.Y, poseData.camRot.Z };
             List<double> opdata = new List<double>() { nnPoseData.rbPos.X, nnPoseData.rbPos.Y, nnPoseData.rbPos.Z, nnPoseData.rbRot.W, nnPoseData.rbRot.X, nnPoseData.rbRot.Y, nnPoseData.rbRot.Z };
             HLdata.Add(hldata);
             OPdata.Add(opdata);
-
         }
-
-        public void WriteToLogKB(string line)
-        {
-            using (FileStream fs = new FileStream(outputFile2_, FileMode.Append))
-            {
-                using (StreamWriter outputFile = new StreamWriter(fs))
-                {
-                    outputFile.WriteLine(line);
-                }
-            }
-        }
-
+           
         // Write line to output file
-        public void WriteToLog(string line)
-        {            
-            using (FileStream fs = new FileStream(outputFile_, FileMode.Append))
+        public async Task WriteToFile(string file, string line)
+        {
+            using (StreamWriter outputFile = new StreamWriter(file, true))
             {
-                using (StreamWriter outputFile = new StreamWriter(fs))
-                {
-                    outputFile.WriteLine(line);
-                }
+                await outputFile.WriteLineAsync(line);
             }
         }
 
-        public void WriteToLogMRB(string line)
+        public void NewPhrase(string stimulus)
         {
-            using (FileStream fs = new FileStream(outputFile1_, FileMode.Append))
-            {
-                using (StreamWriter outputFile = new StreamWriter(fs))
-                {
-                    outputFile.WriteLine(line);
-                }
-            }
-        }
+            Console.WriteLine("Stimulus: " + stimulus);
 
-        public void InterpretMessage(string messageString1)
-        {
+            // Send the stimulus to the HoloServer
+            holoDataClient_.SendStimulus(stimulus);
+            holoDataClient_.UpdateDoneKeyState(0);
+
             //Console.Write(messageString1);
             logStartTime_ = System.DateTime.Now;
 
-            outputFile_ = outputFile_ + logStartTime_.ToString("_yyMMdd_hhmmss") + messageString1+ ".csv";
-            WriteToLog("# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
-            outputFile1_ = outputFile1_ + logStartTime_.ToString("_yyMMdd_hhmmss") + messageString1 + ".csv";
-            outputFile2_ = outputFile2_ + logStartTime_.ToString("_yyMMdd_hhmmss") + messageString1 + ".csv";
+            string phrase = stimulus.ToLower();
+            phrase = phrase.Replace(' ', '_');
+            string logSuffix = "_" + phrase + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
+            eventLogFile_ = eventLogFilePrefix_ + logSuffix;
+
+            // Write header to event log file
+            WriteToFile(eventLogFile_, "# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
+
+            otLogFile_ = otLogFilePrefix_ + logSuffix;
+            traceLogFile_ = traceLogFilePrefix_ + logSuffix;
 
             holoDataClient_.StartFetchLoop(2000);
             holoDataClient_.OnPoseUpdate = PoseDataReceived;
 
-            nnStartFetchLoop(20, messageString1);
+            nnStartFetchLoop(10, stimulus);
             //Console.Write(messageString1);
             return;
 
@@ -388,7 +437,11 @@ namespace CalibrationConsole
             NatNetClient nnClient = new NatNetClient();
             nnClient.Connect();
 
-            CalibrationClient calClient = new CalibrationClient(holoClient, nnClient);
+            // Don't require spaces
+            //CalibrationClient calClient = new CalibrationClient(holoClient, nnClient);
+
+            // Require spaces
+            CalibrationClient calClient = new CalibrationClient(holoClient, nnClient, true);
 
             Console.WriteLine("======================== STREAMING DATA (PRESS ESC TO EXIT) =====================\n");
 
@@ -399,10 +452,10 @@ namespace CalibrationConsole
 
             // Send message to server
             string word = getInput(messageRequest);
-            calClient.InterpretMessage(word);
+            calClient.NewPhrase(word);
 
             // Infinite loop
-            while (!(Console.ReadKey().Key == ConsoleKey.Escape))
+            while (true)
             {
                 // Continuously listening for Frame data
                 // Enter ESC to exit

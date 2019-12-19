@@ -64,6 +64,46 @@ namespace CalibrationConsole
         }
 
 
+        public void SendStimulus(string stimulus)
+        {
+            try
+            {
+                SendMessage("kb_stimulus\t" + stimulus);
+
+            }
+            catch (SystemException exception)
+            {
+                Console.WriteLine("Exception: {0}", exception);
+            }
+        }
+
+        public void AddCharacter(string character)
+        {
+            try
+            {
+                SendMessage("kb_add_letter\t" + character);
+
+            }
+            catch (SystemException exception)
+            {
+                Console.WriteLine("Exception: {0}", exception);
+            }
+        }
+
+        // Update DONE key display state, 0 reset, 1 green, 2 red
+        public void UpdateDoneKeyState(int state)
+        {
+            try
+            {
+                SendMessage("kb_done_key_state\t" + state);
+
+            }
+            catch (SystemException exception)
+            {
+                Console.WriteLine("Exception: {0}", exception);
+            }
+        }
+
         // Establish connection to HoloLens server
         TcpClient Connect(String server, int port)
         {
@@ -87,10 +127,15 @@ namespace CalibrationConsole
 
         private void fetchHoloLensData(Object source, System.Timers.ElapsedEventArgs e)
         {
+            string reply = "";
+
             try
             {
                 SendMessage( "kb_cam_pose_data");
-                string reply = ReadMessage(client_);
+                reply = ReadMessage(client_);
+
+                // Trim TODO sort out in proper receive handler
+                reply = reply.Replace('\0', ' ');
 
                 string[] cols = reply.Split(',');
                 if (cols.Length == 15)
@@ -109,13 +154,14 @@ namespace CalibrationConsole
             catch (SystemException exception)
             {
                 Console.WriteLine("Exception: {0}", exception);
+                Console.WriteLine("Server reply: {0}", reply);
             }
         }
 
         public void SendMessage( string message)
         {
             // Translate the passed message into ASCII and store it as a Byte array.
-            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+            Byte[] data = System.Text.Encoding.ASCII.GetBytes(message + (char)0);
 
             // Get a client stream for writing.
             NetworkStream stream = client_.GetStream();

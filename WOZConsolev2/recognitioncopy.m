@@ -23,7 +23,7 @@ M3  = containers.Map(keySet1,valueSet1);
 
 
 L=0.03;
-L_d=0.05;
+L_d=0.03;
 kbScale=0.0001;
 
 
