@@ -1,8 +1,13 @@
+
+
+
+addpath('kb_trace')
+
 layoutFile = 'holokeyboard.txt';
 kbScale = 0.0001;
 [keys] = parseLayout(layoutFile);
 
-filename = 'kbtrace-log_how_are_you_191219_015609.csv';
+filename = 'kbtrace-log_they_are_more_efficiently_pooled_191220_041052.csv';
 fid = fopen(filename);
 
 % Data to populate from file

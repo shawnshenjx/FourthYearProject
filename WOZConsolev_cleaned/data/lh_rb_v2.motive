@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Profile version="1">
+    <NodeAssets>
+        <rigid_body version="1.1" id="7da3f75ed5e0708a:89f1026118dc11e9">
+            <markers>
+                <marker id="0:c35d">
+                    <position>-0.0514684,0.0179004,-0.00262704</position>
+                    <size>0</size>
+                    <residual>0</residual>
+                    <label_id>1</label_id>
+                </marker>
+                <marker id="0:c35f">
+                    <position>-0.000480994,4.5113e-05,0.0360297</position>
+                    <size>0</size>
+                    <residual>0</residual>
+                    <label_id>2</label_id>
+                </marker>
+                <marker id="0:c364">
+                    <position>-0.000320085,0.0350967,-6.59286e-05</position>
+                    <size>0</size>
+                    <residual>0</residual>
+                    <label_id>3</label_id>
+                </marker>
+                <marker id="0:c365">
+                    <position>0.0402695,0.00695777,-0.00133672</position>
+                    <size>0</size>
+                    <residual>0</residual>
+                    <label_id>4</label_id>
+                </marker>
+            </markers>
+            <properties>
+                <property>
+                    <name>NodeName</name>
+                    <value>lh_rb_v2</value>
+                    <defaultValue>lh_rb_v2</defaultValue>
+                </property>
+                <property>
+                    <name>Color</name>
+                    <value>11010194</value>
+                    <defaultValue>11010194</defaultValue>
+                </property>
+                <property>
+                    <name>UserData</name>
+                    <value>3</value>
+                    <defaultValue>4</defaultValue>
+                </property>
+                <property>
+                    <name>TrackingAlgorithmLevel</name>
+                    <value>1</value>
+                </property>
+                <property>
+                    <name>MarkerLocation0</name>
+                    <value>-0.0514684,0.0179004,-0.00262704</value>
+                    <defaultValue>-0.0489128,0.00291043,0.00830455</defaultValue>
+                </property>
+                <property>
+                    <name>MarkerLocation1</name>
+                    <value>-0.000480994,4.5113e-05,0.0360297</value>
+                    <defaultValue>0.012843,-0.0149449,0.0250463</defaultValue>
+                </property>
+                <property>
+                    <name>MarkerLocation2</name>
+                    <value>-0.000320085,0.0350967,-6.59286e-05</value>
+                    <defaultValue>-0.000529477,0.0201067,-0.00848131</defaultValue>
+                </property>
+                <property>
+                    <name>MarkerLocation3</name>
+                    <value>0.0402695,0.00695777,-0.00133672</value>
+                    <defaultValue>0.0366284,-0.00803225,-0.0248647</defaultValue>
+                </property>
+            </properties>
+            <MarkerNames ReorderMarkers="true">
+                <!--To rename markers, modify the value in the "name" tag.-->
+                <Marker name="Marker1" oldName="Marker1"/>
+                <Marker name="Marker2" oldName="Marker2"/>
+                <Marker name="Marker3" oldName="Marker3"/>
+                <Marker name="Marker4" oldName="Marker4"/>
+                <!--Renaming markers added to a skeletons: If a fourth marker is added manually to the head of a skeleton, then add a tag such as <Marker name="Head_4" oldName="Head_4" /> where the values in name and oldName are the bone segment (case matters) followed by the marker number.-->
+                <!--Skeleton Bone Segment Names: Head, Neck, Chest, Ab, Hip, LShoulder, LUArm, LFArm, LHand, RShoulder, RUArm, RFArm, RHand, LThigh, LShin, LFoot, LToe, RThigh, RShin, RFoot, RToe.-->
+                <!--If "ReorderMarkers = True" the order here persists into the labeling pane.-->
+            </MarkerNames>
+            <MarkerColors>
+                <!--The "name" tag in this section corresponds with the "name" values in <MarkerNames>.-->
+                <Marker name="Marker1" color="146 0 168" movable="false"/>
+                <Marker name="Marker2" color="146 0 168" movable="false"/>
+                <Marker name="Marker3" color="146 0 168" movable="false"/>
+                <Marker name="Marker4" color="146 0 168" movable="false"/>
+                <!--If nothing appears in this section it is because you need to update or generate colors. You can do this in the asset's context menu.-->
+                <!--The movable="false" tag currently is not functioning.-->
+            </MarkerColors>
+            <MarkerSticks>
+                <!--The "origin" and "end" tags in this section correspond with the "name" values in <MarkerNames>-->
+            </MarkerSticks>
+        </rigid_body>
+    </NodeAssets>
+</Profile>

@@ -258,7 +258,7 @@ namespace CalibrationConsole
 
         private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index, string targetWord)
         {
-            //int idxhl = 0;
+            idxHl_ = 0;
    
             if (HLdata.Count == 0)
             {
@@ -428,10 +428,10 @@ namespace CalibrationConsole
             nnClient.Connect();
 
             // Don't require spaces
-            //CalibrationClient calClient = new CalibrationClient(holoClient, nnClient);
+            CalibrationClient calClient = new CalibrationClient(holoClient, nnClient, false);
 
             // Require spaces
-            CalibrationClient calClient = new CalibrationClient(holoClient, nnClient, true);
+            //CalibrationClient calClient = new CalibrationClient(holoClient, nnClient, true);
 
             Console.WriteLine("======================== STREAMING DATA (PRESS ESC TO EXIT) =====================\n");
 

@@ -18,7 +18,7 @@ mobile281	It reads like she is in
 mobile291	Has Dynegy made a specific request
 mobile292	I am walking in now
 mobile294	They have capacity now
-mobile310	A gift isn't necessary
+mobile310	A gift is not necessary
 mobile313	Tell her to get my expense report done
 mobile314	I am out of town on business tonight
 mobile319	I'm waiting until she comes home
@@ -39,22 +39,22 @@ mobile566	Have I mentioned how much I love Houston traffic
 mobile569	Take what you can get
 mobile576	Should systems manage the migration
 mobile588	I think that is the right answer
-mobile596	I'm glad you liked it
+mobile596	I am glad you liked it
 mobile599	This looks fine
-mobile601	I've never worked with her
+mobile601	I have never worked with her
 mobile602	Get with Mary for format
 mobile605	I hope you are feeling better
-mobile607	I'm glad she likes her tree
+mobile607	I am glad she likes her tree
 mobile608	Are you getting all the information you need
 mobile609	Have a great trip
 mobile619	Did you talk to Ava this morning
 mobile622	Can you help
-mobile623	It's not looking too good is it
+mobile623	It is not looking too good is it
 mobile624	Has anyone else heard anything
 mobile636	Is it over
-mobile641	I'll get you one
+mobile641	I will get you one
 mobile643	OK with me
-mobile680	What's going on
+mobile680	What is going on
 mobile681	You can talk to Becky
 mobile688	I talked to Duran
 mobile693	I agreed terms with Greg
@@ -71,6 +71,26 @@ mobile811	What's your phone number
 mobile821	Thanks for checking with me
 mobile822	This is very sensitive
 mobile831	Can we have them until we move
-mobile837	I'll catch up with you tomorrow
+mobile837	I will catch up with you tomorrow
 mobile840	Are you in today
 mobile884	Let it rip
+custom-made-word01	word
+custom-made-word02	valuable 
+custom-made-word03	good
+custom-made-word04	expensive
+custom-made-word05	treasure 
+custom-made-word06	quit
+custom-made-word07	position
+custom-made-word08	board
+custom-made-word09	speed
+custom-made-word10	quality 
+custom-made-word11	club
+custom-made-word12	love
+custom-made-word13	chase
+custom-made-word14	belong
+custom-made-word15	sophisticated
+custom-made-word16	complicated
+custom-made-word17	relationship
+custom-made-word18	report
+custom-made-word19	tomorrow
+custom-made-word20	chocolate
