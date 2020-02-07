@@ -35,7 +35,9 @@ namespace CalibrationConsole
 
         // Keep spaces
         private bool requireSpaces_ = false;
+        private static bool train_ = false;
 
+        public bool retry2_ = false;
         // Event log
         private string eventLogFilePrefix_ = "event-log";
         private string eventLogFile_ = "";
@@ -68,6 +70,7 @@ namespace CalibrationConsole
         {
             requireSpaces_ = requireSpaces;
             
+            
 
             phraseList_ = ImportPhraseList("phrase-list.txt");
 
@@ -86,7 +89,7 @@ namespace CalibrationConsole
             holoDataClient_.OnPoseUpdate = PoseDataReceived;
         }
 
-        private static string getInput(string request)
+        public static string getInput(string request)
         {
             //bool inputReceived = true;
             Console.WriteLine("====================");
@@ -98,6 +101,15 @@ namespace CalibrationConsole
             //{
             //    inputReceived = false;
             //}
+
+            if (no==0)
+            {
+                train_ = true;
+            }
+            else
+            {
+                train_ = false;
+            }
             string message = phraseList_[no];
 
             return message;
@@ -194,12 +206,31 @@ namespace CalibrationConsole
             if (requireSpaces_)
             {
                 length = messageString.Length;
-            }            
-            
-            if (index > length + 2)
+            }
+
+            //Console.WriteLine("Waiting for console input:");
+            //string retry = Console.ReadLine();
+            //retry2_ = Convert.ToBoolean(retry);
+
+            if (index > length + 2 | retry2_)
             {
+                retry2_ = false;
                 // Update done key
                 holoDataClient_.UpdateDoneKeyState(2);
+       
+                if (train_)
+                {
+                    holoDataClient_.UpdateTrainKeyState('Q', 0);
+
+                    holoDataClient_.UpdateTrainKeyState('Z', 0);
+
+                    holoDataClient_.UpdateTrainKeyState('M', 0);
+
+                    holoDataClient_.UpdateTrainKeyState('P', 0);
+
+                }
+
+
 
                 Console.WriteLine("Completed: " + messageString);
                 Console.WriteLine("Char Count: "+length);
@@ -325,6 +356,33 @@ namespace CalibrationConsole
                 {
                     holoDataClient_.UpdateDoneKeyState(1);
                 }
+
+                if (train_==true)
+                {
+                    if (preIndex == 2)
+                    {
+                        holoDataClient_.UpdateTrainKeyState('Q',1);
+                    }
+
+                    if (preIndex == 3)
+                    {
+                        holoDataClient_.UpdateTrainKeyState('P',1);
+                    }
+
+                    if (preIndex == 4)
+                    {
+                        holoDataClient_.UpdateTrainKeyState('Z',1);
+                    }
+
+                    if (preIndex == 5)
+                    {
+                        holoDataClient_.UpdateTrainKeyState('M',1);
+                    }
+
+                }
+
+
+
             }
 
 
@@ -408,8 +466,12 @@ namespace CalibrationConsole
 
         }
         
-
-
+        // TODO clean this functionality up
+        public void ForceRetry()
+        {
+            retry2_ = true;
+        }
+        
         // Main function
         static void Main(string[] args)
         {
@@ -428,10 +490,10 @@ namespace CalibrationConsole
             nnClient.Connect();
 
             // Don't require spaces
-            CalibrationClient calClient = new CalibrationClient(holoClient, nnClient, false);
+            //CalibrationClient calClient = new CalibrationClient(holoClient, nnClient, false);
 
             // Require spaces
-            //CalibrationClient calClient = new CalibrationClient(holoClient, nnClient, true);
+            CalibrationClient calClient = new CalibrationClient(holoClient, nnClient, true);
 
             Console.WriteLine("======================== STREAMING DATA (PRESS ESC TO EXIT) =====================\n");
 
@@ -449,6 +511,17 @@ namespace CalibrationConsole
             {
                 // Continuously listening for Frame data
                 // Enter ESC to exit
+
+                ConsoleKeyInfo key = Console.ReadKey(true);
+                switch (key.Key)
+                {
+                    case ConsoleKey.X:
+                        Console.WriteLine("You pressed X!");
+                        calClient.ForceRetry();
+                        break;
+                    default:
+                        break;
+                }
             }
 
             // Disconnect clients

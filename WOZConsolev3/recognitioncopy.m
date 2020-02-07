@@ -20,7 +20,7 @@ M2  = containers.Map(valueSet1,keySet1);
 M3  = containers.Map(keySet1,valueSet1);
 
 
-L=0.1;
+L=0.005;
 
 kbScale=0.0001;
 

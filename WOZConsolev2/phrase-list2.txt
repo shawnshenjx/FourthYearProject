@@ -1,0 +1,97 @@
+﻿	QPZM
+	Are you going to join us for lunch
+	Is she done yet
+	Thanks for the quick turnaround
+mobile101	How are you
+mobile139	Please call tomorrow if possible
+mobile140	We are all fragile
+mobile148	I would like to attend if so
+mobile155	I can return earlier
+mobile156	I am trying again
+mobile174	I will bring John Brindle
+mobile193	He would love anything about rocks
+mobile198	What do you hear
+mobile212	Hope your trip to Florida was good
+mobile226	What's his problem
+mobile228	She called and wants to come over this AM
+mobile232	See you soon
+mobile281	It reads like she is in
+mobile291	Has Dynegy made a specific request
+mobile292	I am walking in now
+mobile294	They have capacity now
+mobile310	A gift is not necessary
+mobile313	Tell her to get my expense report done
+mobile314	I am out of town on business tonight
+mobile319	I'm waiting until she comes home
+mobile320	Not even close
+mobile329	Chris Foster is in
+mobile334	They are more efficiently pooled
+mobile404	Could you try ringing her
+mobile409	Do you need it today
+mobile429	Keep me posted
+mobile434	John this message concerns me
+mobile464	Call me to give me a heads up
+mobile467	And leave my school alone
+mobile479	What is in the plan
+mobile539	Where do you want to meet to walk over there
+mobile561	I am almost speechless
+mobile564	Suggest you get facts before judging anyone
+mobile566	Have I mentioned how much I love Houston traffic
+mobile569	Take what you can get
+mobile576	Should systems manage the migration
+mobile588	I think that is the right answer
+mobile596	I am glad you liked it
+mobile599	This looks fine
+mobile601	I have never worked with her
+mobile602	Get with Mary for format
+mobile605	I hope you are feeling better
+mobile607	I am glad she likes her tree
+mobile608	Are you getting all the information you need
+mobile609	Have a great trip
+mobile619	Did you talk to Ava this morning
+mobile622	Can you help
+mobile623	It is not looking too good is it
+mobile624	Has anyone else heard anything
+mobile636	Is it over
+mobile641	I will get you one
+mobile643	OK with me
+mobile680	What is going on
+mobile681	You can talk to Becky
+mobile688	I talked to Duran
+mobile693	I agreed terms with Greg
+mobile699	I am at the lake
+mobile702	I told you silly
+mobile706	Wednesday is definitely a hot chocolate day
+mobile709	Thanks for your concern
+mobile713	Thursday works better for me
+mobile756	What is the mood
+mobile785	I am on my way
+mobile794	Do we need to discuss
+mobile797	Just playing with you
+mobile811	What's your phone number
+mobile821	Thanks for checking with me
+mobile822	This is very sensitive
+mobile831	Can we have them until we move
+mobile837	I will catch up with you tomorrow
+mobile840	Are you in today
+mobile884	Let it rip
+custom-made-word01	word
+custom-made-word02	valuable 
+custom-made-word03	good
+custom-made-word04	expensive
+custom-made-word05	treasure 
+custom-made-word06	quit
+custom-made-word07	position
+custom-made-word08	board
+custom-made-word09	speed
+custom-made-word10	quality 
+custom-made-word11	club
+custom-made-word12	love
+custom-made-word13	chase
+custom-made-word14	belong
+custom-made-word15	sophisticated
+custom-made-word16	complicated
+custom-made-word17	relationship
+custom-made-word18	report
+custom-made-word19	tomorrow
+custom-made-word20	chocolate

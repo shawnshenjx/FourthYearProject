@@ -4,7 +4,7 @@ function [index, letter] = recognitioncopy(pos,index,messageString)
 load('M.mat')
 
 %messageString= messageString(find(~isspace(messageString)));
-messageString=replace(messageString," ","");
+%messageString=replace(messageString," ","");
 splitmessage=split(messageString,['']);
 splitmessage(1)=cellstr('d');
 splitmessage(end)=cellstr('d');
@@ -26,8 +26,11 @@ M3  = containers.Map(keySet1,valueSet1);
 L=0.05;
 L_d=0.05;
 kbScale=0.0001;
-
-
+len=size(keySet1);
+len=len(2);
+if index > len
+    index=len;
+end
 key_=M2(index);
 keypos=cell2mat(M(key_));
  

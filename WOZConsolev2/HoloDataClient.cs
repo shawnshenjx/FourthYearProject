@@ -104,6 +104,20 @@ namespace CalibrationConsole
             }
         }
 
+        public void UpdateTrainKeyState(char key, int state)
+        {
+            try
+            {
+                SendMessage("kb_key_highlight\t" +key+','+ state);
+
+            }
+            catch (SystemException exception)
+            {
+                Console.WriteLine("Exception: {0}", exception);
+            }
+        }
+
+
         // Establish connection to HoloLens server
         TcpClient Connect(String server, int port)
         {

@@ -7,7 +7,7 @@ layoutFile = 'holokeyboard.txt';
 kbScale = 0.0001;
 [keys] = parseLayout(layoutFile);
 
-filename = 'kbtrace-log_they_are_more_efficiently_pooled_191220_041052.csv';
+filename = 'kbtrace-log_our_fax_number_has_changed_200207_050853.csv';
 fid = fopen(filename);
 
 % Data to populate from file
