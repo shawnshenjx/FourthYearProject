@@ -33,6 +33,9 @@ namespace CalibrationConsole
         private NatNetClient natNetClient_ = null;
         private MLApp.MLApp matlab_ = null;
 
+        // Raw stimulus
+        string rawStimulus_ = "";
+
         // Keep spaces
         private bool requireSpaces_ = false;
         //training
@@ -46,10 +49,12 @@ namespace CalibrationConsole
         // Marker and gaze trace
         private string otLogFilePrefix_ = "ot-log";
         private string otLogFile_ = "";
+        private string otDataLog_ = "";
 
         // Trace in kb frame
         private string traceLogFilePrefix_ = "kbtrace-log";
         private string traceLogFile_ = "";
+        private string traceDataLog_ = "";
 
         private System.Timers.Timer timer_ = null;
         private System.Timers.Timer timer1_ = null;
@@ -209,19 +214,23 @@ namespace CalibrationConsole
                     holoDataClient_.UpdateTrainKeyState('M', 0);
 
                     holoDataClient_.UpdateTrainKeyState('P', 0);
-
                 }
 
                 Console.WriteLine("Completed: " + messageString);
                 Console.WriteLine("Char Count: "+length);
                 Console.WriteLine("===============================\n\n");
 
+                // Write out logs
+                WriteToFile(otLogFile_, otDataLog_);
+                otDataLog_ = "";
+                WriteToFile(traceLogFile_, traceDataLog_);
+                traceDataLog_ = "";
+
                 // Increment index to update the KB pose based on latest data
                 GetLatestHLdata();
 
                 //clearHoloLensData();
-                string messageStringHL= messageString.Replace('_', ' ');
-                SendhHoloLensData(messageStringHL);
+                SendhHoloLensData(rawStimulus_);
                 timer_.Enabled = false;
                 timer_.Dispose();
                 //checkend = false;
@@ -248,8 +257,10 @@ namespace CalibrationConsole
             string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
             log += string.Format("{0}", timestamp);
 
-            //WriteToLogMRB(log);
-            WriteToFile(otLogFile_, log);
+            // Append to data log
+            otDataLog_ += log + "\n";
+            
+            // WriteToFile(otLogFile_, log);
         }
 
         private void LogKBData(double[] newmarkerpos1)
@@ -261,8 +272,11 @@ namespace CalibrationConsole
             string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
             log += string.Format("{0}", timestamp);
 
+            // Append to data log
+            traceDataLog_ += log + "\n";
+
             //WriteToLogKB(log);
-            WriteToFile(traceLogFile_, log);
+            //WriteToFile(traceLogFile_, log);
         }
 
         private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index, string targetPhrase)
@@ -384,7 +398,7 @@ namespace CalibrationConsole
             HLdata.Add(hldata);
             OPdata.Add(opdata);
         }
-           
+          
         // Write line to output file
         public async Task WriteToFile(string file, string line)
         {
@@ -396,6 +410,7 @@ namespace CalibrationConsole
 
         public void NewPhrase(string stimulus)
         {
+            rawStimulus_ = stimulus;
             Console.WriteLine("Stimulus: " + stimulus);
 
             // Send the stimulus to the HoloServer
@@ -407,11 +422,10 @@ namespace CalibrationConsole
             string phrase = stimulus.ToLower();
             phrase = phrase.Replace(' ', '_');
             string logSuffix = "_" + phrase + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
-            //eventLogFile_ = eventLogFilePrefix_ + logSuffix;
-            eventLogFile_ = ""; // TEMP set empty so no event log file is written
-
+            eventLogFile_ = eventLogFilePrefix_ + logSuffix;
+            
             // Write header to event log file
-            // WriteToFile(eventLogFile_, "# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z, kb_pos_x,kb_pos_y,kb_pos_z,kb_rot_w,kb_rot_x,kb_rot_y,kb_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
+            WriteToFile(eventLogFile_, "# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z, kb_pos_x,kb_pos_y,kb_pos_z,kb_rot_w,kb_rot_x,kb_rot_y,kb_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
 
             // Set optitrack and trace log file names
             otLogFile_ = otLogFilePrefix_ + logSuffix;

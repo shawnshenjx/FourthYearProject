@@ -23,8 +23,9 @@ M2  = containers.Map(valueSet1,keySet1);
 M3  = containers.Map(keySet1,valueSet1);
 
 
-L=0.05;
+L=0.03;
 L_d=0.05;
+L_v=0.1
 kbScale=0.0001;
 len=size(keySet1);
 len=len(2);
@@ -42,7 +43,9 @@ c=keypos1(3);
 keypos2=transpose([-a ,b,c]);
 pos_d=transpose([pos(1),pos(2),pos(3)]);
 
+
 pos=transpose([pos(1),pos(2),0]);
+%pos_v=transpose([0,0,pos(3)]);
 
 down_key=transpose([0,-0.1,-0.1]);
 
@@ -54,8 +57,8 @@ else
 end
 
 
-
-if and(norm(pos-keypos2) <L,index<A1)
+%if and(and(norm(pos-keypos2) <L,index<A1),abs(pos(3))<L_v))
+if norm(pos-keypos2) <L && index<A1 && abs(pos_d(3))<L_v
 		letter=M2(index);
 		index=index+1 ;
 else

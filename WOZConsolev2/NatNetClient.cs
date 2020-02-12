@@ -86,7 +86,7 @@ namespace CalibrationConsole
         }
 
         private NatNetPoseData ProcessPoseData(NatNetML.FrameOfMocapData data)
-        {
+        {            
             NatNetPoseData poseData = new NatNetPoseData();
 
             /*  Parsing Simple Marker Data   */
@@ -106,36 +106,17 @@ namespace CalibrationConsole
                 for (int j = 0; j < data.nRigidBodies; j++)
                 {
                     if (rbID == data.RigidBodies[j].ID)      // When rigid body ID of the descriptions matches rigid body ID of the frame data.
-                    {
-                        NatNetML.RigidBody rb = mRigidBodies[i];                // Saved rigid body descriptions
+                    {                        
                         NatNetML.RigidBodyData rbData = data.RigidBodies[j];    // Received rigid body descriptions
 
                         if (rbData.Tracked == true)
                         {
                             poseData.rbPos = new Vector3(rbData.x, rbData.y, rbData.z);
                             poseData.rbRot = new Quaternion(rbData.qx, rbData.qy, rbData.qz, rbData.qw);
-
-                            //Console.WriteLine("\tRigidBody ({0}):", rb.Name);
-                            //Console.WriteLine("\t\tpos ({0:N3}, {1:N3}, {2:N3})", rbData.x, rbData.y, rbData.z);
-
-                            // Rigid Body Euler Orientation
-                            float[] quat = new float[4] { rbData.qx, rbData.qy, rbData.qz, rbData.qw };
-                            float[] eulers = new float[3];
-
-                            eulers = NatNetClientML.QuatToEuler(quat, NATEulerOrder.NAT_XYZr); //Converting quat orientation into XYZ Euler representation.
-                            double xrot = RadiansToDegrees(eulers[0]);
-                            double yrot = RadiansToDegrees(eulers[1]);
-                            double zrot = RadiansToDegrees(eulers[2]);
-
-                            //Console.WriteLine("\t\tori ({0:N3}, {1:N3}, {2:N3})", xrot, yrot, zrot);
-
-                            string display = string.Format("\tRigidBody ({0}):", rb.Name);
-                            display += string.Format("\t\tpos ({0:N3}, {1:N3}, {2:N3})", rbData.x, rbData.y, rbData.z);
-                            display += string.Format("\t\tori ({0:N3}, {1:N3}, {2:N3})", xrot, yrot, zrot);
-                            //Console.WriteLine(display);
                         }
                         else
                         {
+                            NatNetML.RigidBody rb = mRigidBodies[i];                // Saved rigid body descriptions
                             Console.WriteLine("\t{0} is not tracked in current frame", rb.Name);
                         }
                     }

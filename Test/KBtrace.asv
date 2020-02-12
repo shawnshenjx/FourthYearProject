@@ -7,7 +7,7 @@ layoutFile = 'holokeyboard.txt';
 kbScale = 0.0001;
 [keys] = parseLayout(layoutFile);
 
-filename = 'kbtrace-log_never_mix_religion_and_politics_200212_055600.csv';
+filename = 'kbtrace-log_shall_we_play_a_round_of_cards_200212_053438.csv';
 fid = fopen(filename);
 
 % Data to populate from file
@@ -32,9 +32,6 @@ while ischar(tline)
     
     % Get next line
     tline = fgetl(fid);
-    if isempty(tline)
-        break
-    end
 end
 
 N = size(tData,1);
