@@ -35,6 +35,7 @@ namespace CalibrationConsole
 
         // Keep spaces
         private bool requireSpaces_ = false;
+        //training
         private static bool train_ = false;
 
         public bool retry2_ = false;
@@ -59,10 +60,7 @@ namespace CalibrationConsole
         private static List<string> phraseList_ = new List<string>();
         private static int idxHl_ = 0;
 
-
-
-        //private bool checkend = true;
-        //public string messageString = "";
+        
 
 
         // Constructor
@@ -70,12 +68,11 @@ namespace CalibrationConsole
         {
             requireSpaces_ = requireSpaces;
             
-            
-
             phraseList_ = ImportPhraseList("phrase-list.txt");
 
             // Create the MATLAB instance 
             matlab_ = new MLApp.MLApp();
+
             // Change to the directory where the function is located 
             string startupPath = Environment.CurrentDirectory;            
             string pathCmd = string.Format("cd {0}\\..\\..", startupPath);
@@ -91,17 +88,14 @@ namespace CalibrationConsole
 
         public static string getInput(string request)
         {
-            //bool inputReceived = true;
+            //get the phrase id
             Console.WriteLine("====================");
             Console.WriteLine(request);
 
             string reply = Console.ReadLine();
             int no = Convert.ToInt32(reply);
-            //if (reply == "exit")
-            //{
-            //    inputReceived = false;
-            //}
 
+            //if phrase id = 0, go into training
             if (no==0)
             {
                 train_ = true;
@@ -117,17 +111,16 @@ namespace CalibrationConsole
 
 
 
-        public void nnStartFetchLoop(int interval , string messageString)
+        public void nnStartFetchLoop(int interval , string stimulus)
         {
             // Create a timer and set a two second interval.
             timer_ = new System.Timers.Timer();
             timer_.Interval = interval;
 
             // Hook up the Elapsed event for the timer. 
-            timer_.Elapsed += (source, e) => ProcessAllData(source, e, messageString);
+            timer_.Elapsed += (source, e) => ProcessAllData(source, e, stimulus);
 
             // Start the timer
-            //timer_.Enabled = true;
             timer_.Start();
         }
 
@@ -178,7 +171,7 @@ namespace CalibrationConsole
             try
             {
                 holoDataClient_.SendMessage("kb_clear");
-
+       
             }
             catch (SystemException exception)
             {
@@ -190,34 +183,23 @@ namespace CalibrationConsole
         // Handle new pose update event
         private void ProcessAllData(Object source, System.Timers.ElapsedEventArgs e, string messageString)
         {
-
-
-
+            // Fetch data from NatNet
             NatNetClient.NatNetPoseData nnPoseData = natNetClient_.FetchFrameData();
 
+            // Log latest NatNet data to optitrack log file
+            LogData(nnPoseData);
+
             index = handledata( nnPoseData, index, messageString);
-
-            var words = messageString.Split(null);
-            int wordcount = words.Length;
-
-            int length = messageString.Length - wordcount + 1;
-
-            // Special case if require spaces, don't subtract wordcount (i.e. n spaces)
-            if (requireSpaces_)
-            {
-                length = messageString.Length;
-            }
-
-            //Console.WriteLine("Waiting for console input:");
-            //string retry = Console.ReadLine();
-            //retry2_ = Convert.ToBoolean(retry);
-
+                        
+            int length = messageString.Length;
+            
+            //if the phrase has been completed or gestured wrong and we want to redo it
             if (index > length + 2 | retry2_)
             {
                 retry2_ = false;
                 // Update done key
                 holoDataClient_.UpdateDoneKeyState(2);
-       
+                //if in training mode, then reset QZMP
                 if (train_)
                 {
                     holoDataClient_.UpdateTrainKeyState('Q', 0);
@@ -230,8 +212,6 @@ namespace CalibrationConsole
 
                 }
 
-
-
                 Console.WriteLine("Completed: " + messageString);
                 Console.WriteLine("Char Count: "+length);
                 Console.WriteLine("===============================\n\n");
@@ -240,22 +220,21 @@ namespace CalibrationConsole
                 GetLatestHLdata();
 
                 //clearHoloLensData();
-                SendhHoloLensData(messageString);
+                string messageStringHL= messageString.Replace('_', ' ');
+                SendhHoloLensData(messageStringHL);
                 timer_.Enabled = false;
                 timer_.Dispose();
                 //checkend = false;
                 
-                index = 1;
-                //Console.WriteLine("Enter new word");                
+                index = 1;              
                 // Send message to server
                 string messageRequest = "Enter new word";
 
-                
                 string newWord = getInput(messageRequest);                
                 NewPhrase(newWord);
             }
 
-            LogData(nnPoseData);
+            
         }
 
         private void LogData(NatNetClient.NatNetPoseData nnPoseData)
@@ -277,7 +256,6 @@ namespace CalibrationConsole
         {
             string log = "";
             log += string.Format("{0:F6},{1:F6},{2:F6},", (double)newmarkerpos1[0], (double)newmarkerpos1[1], (double)newmarkerpos1[2]);
-    
 
             // Add timestamp            
             string timestamp = Math.Round((System.DateTime.Now - logStartTime_).TotalMilliseconds).ToString();
@@ -287,16 +265,16 @@ namespace CalibrationConsole
             WriteToFile(traceLogFile_, log);
         }
 
-        private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index, string targetWord)
+        private int handledata(NatNetClient.NatNetPoseData nnPoseData, int index, string targetPhrase)
         {
             idxHl_ = 0;
    
             if (HLdata.Count == 0)
             {
-                // Console.Write('o');
                 return 1;
             }
 
+            //get the optitrack data and hololens data 
             double[] rbpos = new double[3] { (double)OPdata[idxHl_][0], (double)OPdata[idxHl_][1], (double)OPdata[idxHl_][2] };
             double[] rbquat = new double[4] { (double)OPdata[idxHl_][3], (double)OPdata[idxHl_][4], (double)OPdata[idxHl_][5], (double)OPdata[idxHl_][6] };
             double[] kbP = new double[3] { (double)HLdata[idxHl_][0], (double)HLdata[idxHl_][1], (double)HLdata[idxHl_][2] };
@@ -307,7 +285,7 @@ namespace CalibrationConsole
             double[] mkpos = new double[3] { nnPoseData.mPos.X, nnPoseData.mPos.Y, nnPoseData.mPos.Z };
 
             object newmarkerpos = null;
-
+            //Transform the finger tip trace onto keyboard frame 
             matlab_.Feval("trans", 3, out newmarkerpos, mkpos, rbpos, rbquat, kbP, kbQ, hlPs, hlQs);
             object[] res = newmarkerpos as object[];
 
@@ -321,42 +299,29 @@ namespace CalibrationConsole
             LogKBData(newmarkerpos1);
 
             object result1 = null;
-            // Console.WriteLine('p');
-            //Console.WriteLine(index);
-            //matlab_.Feval("recognitioncopy", 2, out result1, newmarkerpos1, index, targetWord); 
-            string testPhrase = targetWord;
-            if (requireSpaces_)
-            {
-                testPhrase= testPhrase.Replace(' ', '_');
-            }
-            //Console.WriteLine(testPhrase);
-            //Console.WriteLine(requireSpaces_);
-            matlab_.Feval("recognitioncopy", 2, out result1, newmarkerpos1, index, testPhrase.ToLower());
-
-
-
-            object[] res2 = result1 as object[];
-            //Console.WriteLine('p');
-            //Console.WriteLine(res2[0]);
-            //Console.WriteLine('p');
-                       
-            //Console.WriteLine('p');
             
 
+            // Test whether new marker position is within tolerance of target key, result will return index and key
+            matlab_.Feval("recognitioncopy", 2, out result1, newmarkerpos1, index, targetPhrase);                        
+            object[] res2 = result1 as object[];
+            
+            // Copy old index and retrieve new index from result object
             int preIndex = index;
             index = Convert.ToInt32(res2[0]);
             
+            // If index has been incremented
             if (index == preIndex + 1)
             {
+                // Print result for latest index increment
                 Console.WriteLine("result: " + res2[1] + "\t[" + preIndex + "->" + index +"]");
 
-                // holoDataClient_.AddCharacter((string)res2[1]);
-                
+                // Special case for highlighting DONE key
                 if (preIndex == 1)
                 {
                     holoDataClient_.UpdateDoneKeyState(1);
                 }
 
+                // Only if training phase, i.e. phrase id = 0
                 if (train_==true)
                 {
                     if (preIndex == 2)
@@ -378,18 +343,11 @@ namespace CalibrationConsole
                     {
                         holoDataClient_.UpdateTrainKeyState('M',1);
                     }
-
                 }
-
-
-
             }
-
-
-
+            
             // Console.WriteLine(index);
             return index;
-
         }
 
 
@@ -444,26 +402,25 @@ namespace CalibrationConsole
             holoDataClient_.SendStimulus(stimulus);
             holoDataClient_.UpdateDoneKeyState(0);
 
-            //Console.Write(messageString1);
+            // Generate log file name from phrase and current time
             logStartTime_ = System.DateTime.Now;
-
             string phrase = stimulus.ToLower();
             phrase = phrase.Replace(' ', '_');
             string logSuffix = "_" + phrase + logStartTime_.ToString("_yyMMdd_hhmmss") + ".csv";
-            eventLogFile_ = eventLogFilePrefix_ + logSuffix;
+            //eventLogFile_ = eventLogFilePrefix_ + logSuffix;
+            eventLogFile_ = ""; // TEMP set empty so no event log file is written
 
             // Write header to event log file
-            WriteToFile(eventLogFile_, "# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z, kb_pos_x,kb_pos_y,kb_pos_z,kb_rot_w,kb_rot_x,kb_rot_y,kb_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
+            // WriteToFile(eventLogFile_, "# hl_pos_x,hl_pos_y,hl_pos_z,hl_rot_w,hl_rot_x,hl_rot_y,hl_rot_z, kb_pos_x,kb_pos_y,kb_pos_z,kb_rot_w,kb_rot_x,kb_rot_y,kb_rot_z,rb_pos_x,rb_pos_y,rb_pos_z,rb_rot_w,rb_rot_x,rb_rot_y,rb_rot_z,timestamp");
 
+            // Set optitrack and trace log file names
             otLogFile_ = otLogFilePrefix_ + logSuffix;
             traceLogFile_ = traceLogFilePrefix_ + logSuffix;
 
+            // Start the NatNet data fetch loop
+            nnStartFetchLoop(10, phrase);
 
-            nnStartFetchLoop(10, stimulus);
-            //Console.Write(messageString1);
             return;
-
-
         }
         
         // TODO clean this functionality up
@@ -475,39 +432,32 @@ namespace CalibrationConsole
         // Main function
         static void Main(string[] args)
         {
+            Console.WriteLine("arIME ExperimentConsole");
 
-            string messageRequest = "\nEnter message then press Enter. Type 'exit' to quit.";
-            //string messageString = "";
-
-
+            string messageRequest = "\nEnter a phrase id.";
+                        
             // Initialize HoloDataClient
             HoloDataClient holoClient = new HoloDataClient();
             holoClient.ConnectToServer("192.168.1.101", 11001);
-            //holoClient.ConnectToServer("127.0.0.1", 11001);
-
+            
             // Initialize NatNetClient
             NatNetClient nnClient = new NatNetClient();
             nnClient.Connect();
-
-            // Don't require spaces
-            //CalibrationClient calClient = new CalibrationClient(holoClient, nnClient, false);
-
+                        
             // Require spaces
             CalibrationClient calClient = new CalibrationClient(holoClient, nnClient, true);
 
             Console.WriteLine("======================== STREAMING DATA (PRESS ESC TO EXIT) =====================\n");
+                        
+            // Read console input, returns the phrase
+            string phrase = getInput(messageRequest);
+            calClient.NewPhrase(phrase);
 
-            //if (!getInput(messageRequest, out messageString))
-            //{
-            //    break;
-            //}
-
-            // Send message to server
-            string word = getInput(messageRequest);
-            calClient.NewPhrase(word);
+            // Loop flag
+            bool active = true;
 
             // Infinite loop
-            while (true)
+            while (active)
             {
                 // Continuously listening for Frame data
                 // Enter ESC to exit
@@ -515,10 +465,17 @@ namespace CalibrationConsole
                 ConsoleKeyInfo key = Console.ReadKey(true);
                 switch (key.Key)
                 {
+                    case ConsoleKey.Escape:
+                        Console.WriteLine("You pressed ESCAPE!");
+                        active = false;
+                        break;
+
+                    // Special case for stopping phrase during execution
                     case ConsoleKey.X:
                         Console.WriteLine("You pressed X!");
                         calClient.ForceRetry();
                         break;
+
                     default:
                         break;
                 }
