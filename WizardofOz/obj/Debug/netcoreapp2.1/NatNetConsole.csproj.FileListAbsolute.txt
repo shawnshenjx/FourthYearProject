@@ -1,5 +1,0 @@
-C:\Users\jjd50\Documents\HoloGestureKB\FourthYearProject\WizardofOz\obj\Debug\netcoreapp2.1\NatNetConsole.csprojAssemblyReference.cache
-C:\Users\jjd50\Documents\HoloGestureKB\FourthYearProject\WizardofOz\obj\Debug\netcoreapp2.1\NatNetConsole.csproj.ResolveComReference.cache
-C:\Users\jjd50\Documents\HoloGestureKB\FourthYearProject\WizardofOz\obj\Debug\netcoreapp2.1\NatNetConsole.csproj.CoreCompileInputs.cache
-C:\Users\jjd50\Documents\HoloGestureKB\FourthYearProject\WizardofOz\obj\Debug\netcoreapp2.1\NatNetConsole.AssemblyInfoInputs.cache
-C:\Users\jjd50\Documents\HoloGestureKB\FourthYearProject\WizardofOz\obj\Debug\netcoreapp2.1\NatNetConsole.AssemblyInfo.cs
