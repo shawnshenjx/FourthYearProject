@@ -93,7 +93,7 @@ class Model():
 			kappa = kappa + prev_kappa
 			return alpha, beta, kappa # each ~ [?,kmixtures,1]
 
-		self.init_kappa = tf.placeholder(dtype=tf.float32, shape=[None, self.kmixtures, 1]) 
+		self.init_kappa = tf.placeholder(dtype=tf.float32, shape=[None, self.kmixtures, 1])
 		self.char_seq = tf.placeholder(dtype=tf.float32, shape=[None, self.ascii_steps, self.char_vec_len])
 		prev_kappa = self.init_kappa
 		prev_window = self.char_seq[:,0,:]
@@ -131,54 +131,76 @@ class Model():
 
 
 	# ----- build mixture density cap on top of second recurrent cell
-		def gaussian2d(x1, x2, mu1, mu2, s1, s2, rho):
+		def gaussian3d(x1, x2,x3, mu1, mu2, mu3, s1, s2, s3, rho12, rho23, rho31):
 			# define gaussian mdn (eq 24, 25 from http://arxiv.org/abs/1308.0850)
+
+
+
 			x_mu1 = tf.subtract(x1, mu1)
 			x_mu2 = tf.subtract(x2, mu2)
-			Z = tf.square(tf.div(x_mu1, s1)) + \
-			    tf.square(tf.div(x_mu2, s2)) - \
-			    2*tf.div(tf.multiply(rho, tf.multiply(x_mu1, x_mu2)), tf.multiply(s1, s2))
-			rho_square_term = 1-tf.square(rho)
-			power_e = tf.exp(tf.div(-Z,2*rho_square_term))
-			regularize_term = 2*np.pi*tf.multiply(tf.multiply(s1, s2), tf.sqrt(rho_square_term))
+			x_mu3 = tf.subtract(x3, mu3)
+
+			X_=tf.stack([x_mu1,x_mu2,x_mu3],0)
+
+			X=tf.reshape(X_,[3,1])
+
+			XT=tf.reshape(X_,[1,3])
+
+
+
+			cov_mat1_ = tf.stack([tf.sqaure(s1), rho12 * s1 * s2, rho31 * s1 * s3], 0)
+			cov_mat2_ = tf.stack([rho12 * s1 * s2, tf.sqaure(s2), rho23 * s2 * s3], 0)
+			cov_mat3_ = tf.stack([rho31 * s1 * s3, rho23 * s2 * s3, tf.sqaure(s3)], 0)
+
+			cov_mat1 = tf.reshape(cov_mat1_, [3, 1])
+			cov_mat2 = tf.reshape(cov_mat2_, [3, 1])
+			cov_mat3 = tf.reshape(cov_mat3_, [3, 1])
+
+
+			cov_mat= tf.concat([cov_mat1,cov_mat2,cov_mat3],0)
+
+
+			Z=tf.matmul(tf.matmul(XT,tf.transpose(cov_mat)),X)
+
+			power_e=tf.exp(tf.div(-Z,2))
+
+			regularize_term=tf.multiply(tf.pow(tf.multiply(2,np.pi),tf.div(3,2)),tf.square(cov_mat))
+
 			gaussian = tf.div(power_e, regularize_term)
 			return gaussian
 
-		def get_loss(pi, x1_data, x2_data, eos_data, mu1, mu2, sigma1, sigma2, rho, eos):
+		def get_loss(pi, x1_data, x2_data, x3_data, mu1, mu2, mu3, sigma1, sigma2, sigma3, rho12,rho23,rho31):
 			# define loss function (eq 26 of http://arxiv.org/abs/1308.0850)
-			gaussian = gaussian2d(x1_data, x2_data, mu1, mu2, sigma1, sigma2, rho)
-			term1 = tf.multiply(gaussian, pi)
-			term1 = tf.reduce_sum(term1, 1, keep_dims=True) #do inner summation
-			term1 = -tf.log(tf.maximum(term1, 1e-20)) # some errors are zero -> numerical errors.
+			gaussian = gaussian3d(x1_data, x2_data,x3_data, mu1, mu2, m3, sigma1, sigma2, sigma3, rho12, rho23, eho13)
+			term = tf.multiply(gaussian, pi)
+			term = tf.reduce_sum(term, 1, keep_dims=True) #do inner summation
+			term = -tf.log(tf.maximum(term, 1e-20)) # some errors are zero -> numerical errors.
 
-			term2 = tf.multiply(eos, eos_data) + tf.multiply(1-eos, 1-eos_data) #modified Bernoulli -> eos probability
-			term2 = -tf.log(term2) #negative log error gives loss
 
-			return tf.reduce_sum(term1 + term2) #do outer summation
+			return tf.reduce_sum(term) #do outer summation
 
 		# now transform dense NN outputs into params for MDN
 		def get_mdn_coef(Z):
 			# returns the tf slices containing mdn dist params (eq 18...23 of http://arxiv.org/abs/1308.0850)
-			eos_hat = Z[:, 0:1] #end of sentence tokens
-			pi_hat, mu1_hat, mu2_hat, sigma1_hat, sigma2_hat, rho_hat = tf.split(Z[:, 1:], 6, 1)
-			self.pi_hat, self.sigma1_hat, self.sigma2_hat = \
-										pi_hat, sigma1_hat, sigma2_hat # these are useful for bias method during sampling
 
-			eos = tf.sigmoid(-1*eos_hat) # technically we gained a negative sign
+			pi_hat, mu1_hat, mu2_hat, mu3_hat, sigma1_hat, sigma2_hat, sigma3_hat, rho_hat12, rho_hat23, rho_hat31 = tf.split(Z[:, 0:], 8, 1)
+			self.pi_hat, self.sigma1_hat, self.sigma2_hat, self.sigma3_hat = \
+										pi_hat, sigma1_hat, sigma2_hat, sigma3_hat # these are useful for bias method during sampling
+
 			pi = tf.nn.softmax(pi_hat) # softmax z_pi:
-			mu1 = mu1_hat; mu2 = mu2_hat # leave mu1, mu2 as they are
-			sigma1 = tf.exp(sigma1_hat); sigma2 = tf.exp(sigma2_hat) # exp for sigmas
-			rho = tf.tanh(rho_hat) # tanh for rho (squish between -1 and 1)rrr
+			mu1 = mu1_hat; mu2 = mu2_hat; mu3=mu3_hat # leave mu1, mu2 as they are
+			sigma1 = tf.exp(sigma1_hat); sigma2 = tf.exp(sigma2_hat); sigma3 = tf.exp(sigma3_hat) # exp for sigmas
+			rho12 = tf.tanh(rho_hat12); rho23 = tf.tanh(rho_hat23); rho31 = tf.tanh(rho_hat31) # tanh for rho (squish between -1 and 1)rrr
 
-			return [eos, pi, mu1, mu2, sigma1, sigma2, rho]
+			return [pi, mu1, mu2, mu3, sigma1, sigma2, sigma3, rho12, rho23, rho31]
 
 		# reshape target data (as we did the input data)
 		flat_target_data = tf.reshape(self.target_data,[-1, 3])
-		[x1_data, x2_data, eos_data] = tf.split(flat_target_data, 3, 1) #we might as well split these now
+		[x1_data, x2_data, x3_data] = tf.split(flat_target_data, 3, 1) #we might as well split these now
 
-		[self.eos, self.pi, self.mu1, self.mu2, self.sigma1, self.sigma2, self.rho] = get_mdn_coef(output)
+		[self.pi, self.mu1, self.mu2, self.mu3, self.sigma1, self.sigma2, self.sigma3, self.rho12, self.rho23, self.rho31] = get_mdn_coef(output)
 
-		loss = get_loss(self.pi, x1_data, x2_data, eos_data, self.mu1, self.mu2, self.sigma1, self.sigma2, self.rho, self.eos)
+		loss = get_loss(self.pi, x1_data, x2_data, x3_data, self.mu1, self.mu2,self.mu3, self.sigma1, self.sigma2, self.sigma3, self.rho12, self.rho23, self.rho31)
 		self.cost = loss / (self.batch_size * self.tsteps)
 
 		# ----- bring together all variables and prepare for training

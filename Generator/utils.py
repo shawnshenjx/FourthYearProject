@@ -173,7 +173,7 @@ def to_one_hot(s, ascii_steps, alphabet):
 class Logger():
     def __init__(self, args):
         self.logf = '{}train_scribe.txt'.format(args.log_dir) if args.train else '{}sample_scribe.txt'.format(args.log_dir)
-        with open(self.logf, 'w') as f: f.write("Scribe: Realistic Handriting in Tensorflow\n     by Sam Greydanus\n\n\n")
+        with open(self.logf, 'w') as f: f.write("project by shawn shen")
 
     def write(self, s, print_it=True):
         if print_it:

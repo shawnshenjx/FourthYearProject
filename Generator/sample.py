@@ -50,11 +50,11 @@ def sample(input_text, model, args):
         feed = {model.input_data: prev_x, model.char_seq: one_hot, model.init_kappa: kappa, \
                 model.istate_cell0.c: c0, model.istate_cell1.c: c1, model.istate_cell2.c: c2, \
                 model.istate_cell0.h: h0, model.istate_cell1.h: h1, model.istate_cell2.h: h2}
-        fetch = [model.pi_hat, model.mu1, model.mu2, model.sigma1_hat, model.sigma2_hat, model.rho, model.eos, \
+        fetch = [model.pi_hat, model.mu1, model.mu2, model.mu3, model.sigma1_hat, model.sigma2_hat, model.sigma3_hat, model.rho12, model.rho23, model.rho31, \
                  model.window, model.phi, model.new_kappa, model.alpha, \
                  model.fstate_cell0.c, model.fstate_cell1.c, model.fstate_cell2.c,\
                  model.fstate_cell0.h, model.fstate_cell1.h, model.fstate_cell2.h]
-        [pi_hat, mu1, mu2, sigma1_hat, sigma2_hat, rho, eos, window, phi, kappa, alpha, \
+        [pi_hat, mu1, mu2, mu3, sigma1_hat, sigma2_hat,sigma3_hat, rho12, rho23, rho31, window, phi, kappa, alpha, \
                  c0, c1, c2, h0, h1, h2] = model.sess.run(fetch, feed)
         
         #bias stuff:
@@ -65,15 +65,15 @@ def sample(input_text, model, args):
         
         # choose a component from the MDN
         idx = np.random.choice(pi.shape[1], p=pi[0])
-        eos = 1 if 0.35 < eos[0][0] else 0 # use 0.5 as arbitrary boundary
-        x1, x2 = sample_gaussian2d(mu1[0][idx], mu2[0][idx], sigma1[0][idx], sigma2[0][idx], rho[0][idx])
+        
+        x1, x2 , x3= sample_gaussian3d(mu1[0][idx], mu2[0][idx], mu3[0][idx], sigma1[0][idx], sigma2[0][idx],sigma3[0][idx], rho12[0][idx],rho23[0][idx],rho31[0][idx])
             
         # store the info at this time step
         windows.append(window)
         phis.append(phi[0])
         kappas.append(kappa[0].T)
         pis.append(pi[0])
-        strokes.append([mu1[0][idx], mu2[0][idx], sigma1[0][idx], sigma2[0][idx], rho[0][idx], eos])
+        strokes.append([mu1[0][idx], mu2[0][idx], mu3[0][idx], sigma1[0][idx], sigma2[0][idx],sigma3[0][idx], rho12[0][idx],rho23[0][idx],rho31[0][idx]])
         
         # test if finished (has the read head seen the whole ascii sequence?)
         # main_kappa_idx = np.where(alpha[0]==np.max(alpha[0]));
@@ -81,7 +81,7 @@ def sample(input_text, model, args):
         finished = True if i > args.tsteps else False
         
         # new input is previous output
-        prev_x[0][0] = np.array([x1, x2, eos], dtype=np.float32)
+        prev_x[0][0] = np.array([x1, x2, x3], dtype=np.float32)
         i+=1
 
     windows = np.vstack(windows)
@@ -89,8 +89,7 @@ def sample(input_text, model, args):
     kappas = np.vstack(kappas)
     strokes = np.vstack(strokes)
 
-    # the network predicts the displacements between pen points, so do a running sum over the time dimension
-    strokes[:,:2] = np.cumsum(strokes[:,:2], axis=0)
+
     return strokes, phis, windows, kappas
 
 
@@ -159,6 +158,9 @@ def gauss_plot(strokes, title, figsize = (20,2), save_path='.'):
     plt.savefig(save_path)
     plt.clf() ; plt.cla()
 
+
+
+
 # plots the stroke data (handwriting!)
 def line_plot(strokes, title, figsize = (20,20), save_path='.'):
     import matplotlib as mpl
@@ -166,15 +168,28 @@ def line_plot(strokes, title, figsize = (20,20), save_path='.'):
     import matplotlib.pyplot as plt
     plt.figure(figsize=figsize)
 
+    plt.figure(1)
+    ax1 = plt.subplot(311)
+
     plt.plot(strokes[:,0], strokes[:,1],'b-', linewidth=2.0) #draw a stroke
 
+    ax2 = plt.subplot(312)
+
+    plt.plot(strokes[:,1], strokes[:, 2], 'b-', linewidth=2.0)  # draw a stroke
+
+    ax3 = plt.subplot(313)
+
+
+    plt.plot(strokes[:, 0], strokes[:, 2], 'b-', linewidth=2.0)  # draw a stroke
     # ax = plt.axes(projection='3d')
     # ax.scatter3D(strokes[:,0], strokes[:,1],strokes[:,2], 'gray')
 
 
     # ax.view_init(30, )
 
-    plt.title(title,  fontsize=20)
+    ax1.set_title(title,  fontsize=20)
+    ax2.set_title(title, fontsize=20)
+    ax3.set_title(title, fontsize=20)
 
     plt.savefig(save_path)
     plt.clf() ; plt.cla()
