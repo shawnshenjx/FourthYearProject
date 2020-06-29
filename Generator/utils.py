@@ -53,16 +53,25 @@ class DataLoader():
 
                 phrases_join = ' '.join(phrases)
 
+
+
                 pos_list = []
                 t = []
-
+                pre_x=0
+                pre_y=0
+                pre_z=0
                 with open(fname, newline='') as csvfile:
                     spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
                     #             counter=0|
                     for row in spamreader:
                         if row == []:
                             continue
-                        pos_list.append([float(row[0]), float(row[1]), float(row[2])])
+
+
+                        pos_list.append([float(row[0])-pre_x, float(row[1])-pre_y, float(row[2])-pre_z])
+                        pre_x=float(row[0])
+                        pre_y=float(row[1])
+                        pre_z=float(row[2])
                         t.append(float(row[3]))
 
                 asciis.append(phrases_join)
@@ -159,7 +168,8 @@ class DataLoader():
     # utility function for converting input ascii characters into vectors the network can understand.
     # index position 0 means "unknown"
 def to_one_hot(s, ascii_steps, alphabet):
-    steplimit=3e3; s = s[:3e3] if len(s) > 3e3 else s # clip super-long strings
+    # steplimit=3e3; s = s[:3e3] if len(s) > 3e3 else s
+    # clip super-long strings
     seq = [alphabet.find(char) + 1 for char in s]
     if len(seq) >= ascii_steps:
         seq = seq[:ascii_steps]

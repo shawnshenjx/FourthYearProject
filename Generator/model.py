@@ -6,6 +6,7 @@ import os
 import xml.etree.ElementTree as ET
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 from utils import *
 
 class Model():
@@ -121,7 +122,7 @@ class Model():
 		outs_cell2, self.fstate_cell2 = tf.contrib.legacy_seq2seq.rnn_decoder(outs_cell1, self.istate_cell2, self.cell2, loop_function=None, scope='cell2')
 
 	# ----- start building the Mixture Density Network on top (start with a dense layer to predict the MDN params)
-		n_out = 1 + self.nmixtures * 6 # params = end_of_stroke + 6 parameters per Gaussian
+		n_out = self.nmixtures * 10 # params = 10 parameters per Gaussian
 		with tf.variable_scope('mdn_dense'):
 			mdn_w = tf.get_variable("output_w", [self.rnn_size, n_out], initializer=self.graves_initializer)
 			mdn_b = tf.get_variable("output_b", [n_out], initializer=self.graves_initializer)
@@ -132,46 +133,158 @@ class Model():
 
 	# ----- build mixture density cap on top of second recurrent cell
 		def gaussian3d(x1, x2,x3, mu1, mu2, mu3, s1, s2, s3, rho12, rho23, rho31):
-			# define gaussian mdn (eq 24, 25 from http://arxiv.org/abs/1308.0850)
 
-
-
-			x_mu1 = tf.subtract(x1, mu1)
+			x_mu1=tf.subtract(x1,mu1)
 			x_mu2 = tf.subtract(x2, mu2)
 			x_mu3 = tf.subtract(x3, mu3)
 
-			X_=tf.stack([x_mu1,x_mu2,x_mu3],0)
+			m11 = tf.square(s1)
+			m12 = tf.multiply(tf.multiply(s1,s2),rho12)
+			m13 = tf.multiply(tf.multiply(s1,s3),rho31)
+			m21 = m12
+			m22 = tf.square(s2)
+			m23 = tf.multiply(tf.multiply(s2, s3), rho23)
+			m31 = m13
+			m32 = m23
+			m33 = tf.square(s3)
 
-			X=tf.reshape(X_,[3,1])
+			a11=tf.multiply(m33,m22)-tf.square(m23)
+			a12=tf.multiply(m13,m23)-tf.multiply(m33,m12)
+			a13=tf.multiply(m12,m23)-tf.multiply(m13,m22)
 
-			XT=tf.reshape(X_,[1,3])
+			a22=tf.multiply(m33,m11)-tf.square(m13)
+			a23=tf.multiply(m12,m13)-tf.multiply(m11,m23)
+
+			a33=tf.multiply(m11,m22)-tf.square(m12)
+
+			a21=a12
+			a31=a13
+			a32=a23
+
+			D=tf.multiply(m11,a11)+tf.multiply(m12,a12)+tf.multiply(m13,a13)
+
+			d11=tf.div(a11,D)
+			d12=tf.div(a12,D)
+			d13=tf.div(a13,D)
+			d21=tf.div(a21,D)
+			d22=tf.div(a22,D)
+			d23=tf.div(a23,D)
+			d31=tf.div(a31,D)
+			d32=tf.div(a32,D)
+			d33=tf.div(a33,D)
 
 
-
-			cov_mat1_ = tf.stack([tf.sqaure(s1), rho12 * s1 * s2, rho31 * s1 * s3], 0)
-			cov_mat2_ = tf.stack([rho12 * s1 * s2, tf.sqaure(s2), rho23 * s2 * s3], 0)
-			cov_mat3_ = tf.stack([rho31 * s1 * s3, rho23 * s2 * s3, tf.sqaure(s3)], 0)
-
-			cov_mat1 = tf.reshape(cov_mat1_, [3, 1])
-			cov_mat2 = tf.reshape(cov_mat2_, [3, 1])
-			cov_mat3 = tf.reshape(cov_mat3_, [3, 1])
-
-
-			cov_mat= tf.concat([cov_mat1,cov_mat2,cov_mat3],0)
-
-
-			Z=tf.matmul(tf.matmul(XT,tf.transpose(cov_mat)),X)
+			Z=tf.multiply(tf.square(x_mu1),d11)+tf.multiply(tf.square(x_mu2),d22)+tf.multiply(tf.square(x_mu3),d33) + 2 * tf.multiply(tf.multiply(x_mu1, x_mu2), d12) + 2 * tf.multiply(tf.multiply(x_mu1, x_mu3), d13) + 2 * tf.multiply(tf.multiply(x_mu2, x_mu3), d23)
 
 			power_e=tf.exp(tf.div(-Z,2))
+			regularize_term=tf.multiply(tf.pow(2*np.pi,tf.div(3.0,2.0)),tf.sqrt(D))
 
-			regularize_term=tf.multiply(tf.pow(tf.multiply(2,np.pi),tf.div(3,2)),tf.square(cov_mat))
+			gaussian=tf.div(power_e,regularize_term)
 
-			gaussian = tf.div(power_e, regularize_term)
+
+
+
+
+
+			#
+			#
+			# 		# define gaussian mdn (eq 24, 25 from http://arxiv.org/abs/1308.0850)
+			#
+			#
+			#
+			# tfd=tfp.distributions
+			#
+			# # print(mu1.get_shape().as_list,s1.get_shape(),x1.get_shape(),mu1.get_shape(),s1.get_shape())
+			#
+			#
+			#
+			#
+			# # with tf.Session() as sess:
+			# # 	print(sess.run(tf.shape(mu1),tf.shape(x1),tf.shape(s1),tf.shape(rho31)))
+			#
+			#
+			#
+			# # mu_=tf.stack([mu1,mu2,mu3])
+			#
+			# mu_ = tf.stack([mu1, mu2, mu3], 0)
+			#
+			# mu = tf.transpose(mu_)
+			#
+			# len_=tf.shape(x1)
+			#
+			# len=tf.reshape(len_[0],[])
+			#
+			# # mu = tf.stack([mu_]*len)
+			#
+			#
+			# #stack multiple mu, create a matrix of shape [len(x1),3] and use for loop to feel it, same with the covariiance matrix OR use append
+			#
+			#
+			#
+			#
+			#
+			# cov=tf.zeros([len,3,3])
+			# cov_mat11=tf.square(s1)
+			# cov_mat12=rho12 * s1 * s2
+			# cov_mat13=rho31 * s1 * s3
+			# cov_mat21=rho12 * s1 * s2
+			# cov_mat22=tf.square(s2)
+			# cov_mat23=rho23 * s2 * s3
+			# cov_mat31=rho31 * s1 * s3
+			# cov_mat32=rho23 * s2 * s3
+			# cov_mat33=tf.square(s3)
+			#
+			# cov[:, 0, 0] = cov_mat11
+			# cov[:, 0, 1] = cov_mat12
+			# cov[:, 0, 2] = cov_mat13
+			# cov[:, 1, 0] = cov_mat21
+			# cov[:, 1, 1] = cov_mat22
+			# cov[:, 1, 2] = cov_mat23
+			# cov[:, 2, 0] = cov_mat31
+			# cov[:, 2, 1] = cov_mat32
+			# cov[:, 2, 2] = cov_mat33
+			#
+			# #stack multiple cov
+			#
+			# # cov =tf.stack([cov_]*len)
+			#
+			# mvn=tfd.MultivariateNormalFullCovariance(loc=mu,convariance_matrix=cov)
+			#
+			# X_ = tf.stack([x1, x2, x3], 0)
+			#
+			# X = tf.transpose(X_)
+			#
+			# gaussian=mvn.prob(X)
+			#
+			#
+			#
+			# #
+			# # x_mu1 = tf.subtract(x1, mu1)
+			# # x_mu2 = tf.subtract(x2, mu2)
+			# # x_mu3 = tf.subtract(x3, mu3)
+			#
+			# #
+			# #
+			# # X_=tf.stack([x_mu1,x_mu2,x_mu3],0)
+			# #
+			# # X=tf.reshape(X_,[3,1])
+			# #
+			# # XT=tf.reshape(X_,[1,3])
+			# #
+			# #
+			# #
+			# # Z=tf.matmul(tf.matmul(XT,tf.transpose(cov_mat)),X)
+			# #
+			# # power_e=tf.exp(tf.div(-Z,2))
+			# #
+			# # regularize_term=tf.multiply(tf.pow(tf.multiply(2,np.pi),tf.div(3,2)),tf.square(cov_mat))
+			#
+			# # gaussian = tf.div(power_e, regularize_term)
 			return gaussian
 
-		def get_loss(pi, x1_data, x2_data, x3_data, mu1, mu2, mu3, sigma1, sigma2, sigma3, rho12,rho23,rho31):
+		def get_loss(pi, x1_data, x2_data, x3_data, mu1, mu2, mu3, sigma1, sigma2, sigma3, rho12,rho23, rho31):
 			# define loss function (eq 26 of http://arxiv.org/abs/1308.0850)
-			gaussian = gaussian3d(x1_data, x2_data,x3_data, mu1, mu2, m3, sigma1, sigma2, sigma3, rho12, rho23, eho13)
+			gaussian = gaussian3d(x1_data, x2_data,x3_data, mu1, mu2, mu3, sigma1, sigma2, sigma3, rho12, rho23, rho31)
 			term = tf.multiply(gaussian, pi)
 			term = tf.reduce_sum(term, 1, keep_dims=True) #do inner summation
 			term = -tf.log(tf.maximum(term, 1e-20)) # some errors are zero -> numerical errors.
@@ -183,7 +296,7 @@ class Model():
 		def get_mdn_coef(Z):
 			# returns the tf slices containing mdn dist params (eq 18...23 of http://arxiv.org/abs/1308.0850)
 
-			pi_hat, mu1_hat, mu2_hat, mu3_hat, sigma1_hat, sigma2_hat, sigma3_hat, rho_hat12, rho_hat23, rho_hat31 = tf.split(Z[:, 0:], 8, 1)
+			pi_hat, mu1_hat, mu2_hat, mu3_hat, sigma1_hat, sigma2_hat, sigma3_hat, rho_hat12, rho_hat23, rho_hat31 = tf.split(Z[:, 0:], 10, 1)
 			self.pi_hat, self.sigma1_hat, self.sigma2_hat, self.sigma3_hat = \
 										pi_hat, sigma1_hat, sigma2_hat, sigma3_hat # these are useful for bias method during sampling
 

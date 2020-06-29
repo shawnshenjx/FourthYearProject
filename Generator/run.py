@@ -21,8 +21,10 @@ def main():
 
 	# window params
 	parser.add_argument('--kmixtures', type=int, default=1, help='number of gaussian mixtures for character window')
-	parser.add_argument('--alphabet', type=str, default=' abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', \
-						help='default is a-z, A-Z, space, and <UNK> tag')
+	# parser.add_argument('--alphabet', type=str, default='_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', \
+	# 					help='default is a-z, A-Z, space, and <UNK> tag')
+	parser.add_argument('--alphabet', type=str, default=' abcdefghijklmnopqrstuvwxyz', \
+						help='default is a-z, space, and <UNK> tag')
 	parser.add_argument('--tsteps_per_ascii', type=int, default=25, help='expected number of pen points per character')
 
 	# training params
@@ -119,7 +121,7 @@ def train_model(args):
 
 def sample_model(args, logger=None):
 	if args.text == '':
-		strings = ['this is great work', 'A project by shawn shen', 'hello world', \
+		strings = ['this is great work', 'a project by shawn shen', 'hello world', \
 			'this should be okay', 'how is the weather'] # test strings
 	else:
 		strings = [args.text]
