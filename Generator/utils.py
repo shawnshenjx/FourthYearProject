@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 import os
-dir
+
 
 
 class DataLoader():
@@ -100,8 +100,16 @@ class DataLoader():
         # every 1 in 20 (5%) will be used for validation data
         cur_data_counter = 0
         self.raw_stroke_data = sorted(self.raw_stroke_data, key=len)
+
+
+
         for i in range(len(self.raw_stroke_data)):
             data = self.raw_stroke_data[i]
+            data = np.array(data)
+            pad = int(np.shape(self.raw_stroke_data[-1])[0] - np.shape(data)[0])
+            # pad_half = int(round(pad / 2))
+            # data = np.concatenate((np.zeros((int(pad - pad_half), 3)), data, np.zeros((pad_half, 3))), axis=0)
+            data = np.concatenate(( data, np.zeros((pad, 3))), axis=0)
 
             cur_data_counter = cur_data_counter + 1
             data = np.array(data, dtype=np.float32)
@@ -127,12 +135,12 @@ class DataLoader():
         for i in range(self.batch_size):
             valid_ix = i%len(self.valid_stroke_data)
             data = self.valid_stroke_data[valid_ix]
-            # data = self.valid_stroke_data[i]
-            data=np.array(data)
-            pad=int(np.shape(self.stroke_data[-1])[0]-np.shape(data)[0])
-            # print('pad'+str(pad))
-            pad_half=int(round(pad / 2))
-            data=np.concatenate((np.zeros((int(pad-pad_half),3)),data,np.zeros((pad_half,3))), axis=0)
+            # # data = self.valid_stroke_data[i]
+            # data=np.array(data)
+            # pad=int(np.shape(self.stroke_data[-1])[0]-np.shape(data)[0])
+            # # print('pad'+str(pad))
+            # pad_half=int(round(pad / 2))
+            # data=np.concatenate((np.zeros((int(pad-pad_half),3)),data,np.zeros((pad_half,3))), axis=0)
             x_batch.append(np.copy(data[:self.tsteps]))
             y_batch.append(np.copy(data[1:self.tsteps+1]))
             ascii_list.append(self.valid_ascii_data[valid_ix])
@@ -145,11 +153,13 @@ class DataLoader():
         y_batch = []
         ascii_list = []
         for i in range(self.batch_size):
-            data = self.stroke_data[i]
-            data=np.array(data)
-            pad=int(np.shape(self.stroke_data[-1])[0]-np.shape(data)[0])
-            pad_half = int(round(pad / 2))
-            data = np.concatenate((np.zeros((int(pad - pad_half), 3)), data, np.zeros((pad_half, 3))), axis=0)
+            data = self.stroke_data[self.idx_perm[self.pointer]]
+
+            # data = self.stroke_data[i]
+            # data=np.array(data)
+            # pad=int(np.shape(self.stroke_data[-1])[0]-np.shape(data)[0])
+            # pad_half = int(round(pad / 2))
+            # data = np.concatenate((np.zeros((int(pad - pad_half), 3)), data, np.zeros((pad_half, 3))), axis=0)
             x_batch.append(np.copy(data[:self.tsteps]))
             y_batch.append(np.copy(data[1:self.tsteps+1]))
             ascii_list.append(self.ascii_data[self.idx_perm[self.pointer]])

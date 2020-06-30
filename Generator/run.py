@@ -16,7 +16,7 @@ def main():
 	parser.add_argument('--train', dest='train', action='store_true', help='train the model')
 	parser.add_argument('--sample', dest='train', action='store_false', help='sample from the model')
 	parser.add_argument('--rnn_size', type=int, default=100, help='size of RNN hidden state')
-	parser.add_argument('--tsteps', type=int, default=2650, help='RNN time steps (for backprop)')
+	parser.add_argument('--tsteps', type=int, default=1200, help='RNN time steps (for backprop)')
 	parser.add_argument('--nmixtures', type=int, default=8, help='number of gaussian mixtures')
 
 	# window params
@@ -25,7 +25,7 @@ def main():
 	# 					help='default is a-z, A-Z, space, and <UNK> tag')
 	parser.add_argument('--alphabet', type=str, default=' abcdefghijklmnopqrstuvwxyz', \
 						help='default is a-z, space, and <UNK> tag')
-	parser.add_argument('--tsteps_per_ascii', type=int, default=25, help='expected number of pen points per character')
+	parser.add_argument('--tsteps_per_ascii', type=int, default=60, help='expected number of pen points per character')
 
 	# training params
 	parser.add_argument('--batch_size', type=int, default=32, help='batch size for each gradient step')
