@@ -3,11 +3,13 @@ import tensorflow as tf
 
 import argparse
 import time
+from datetime import datetime
 import os
 
 from model import Model
 from utils import *
 from sample import *
+
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -16,7 +18,7 @@ def main():
 	parser.add_argument('--train', dest='train', action='store_true', help='train the model')
 	parser.add_argument('--sample', dest='train', action='store_false', help='sample from the model')
 	parser.add_argument('--rnn_size', type=int, default=100, help='size of RNN hidden state')
-	parser.add_argument('--tsteps', type=int, default=1200, help='RNN time steps (for backprop)')
+	parser.add_argument('--tsteps', type=int, default=180, help='RNN time steps (for backprop)')
 	parser.add_argument('--nmixtures', type=int, default=8, help='number of gaussian mixtures')
 
 	# window params
@@ -31,12 +33,12 @@ def main():
 	parser.add_argument('--batch_size', type=int, default=32, help='batch size for each gradient step')
 	parser.add_argument('--nbatches', type=int, default=500, help='number of batches per epoch')
 	parser.add_argument('--nepochs', type=int, default=250, help='number of epochs')
-	parser.add_argument('--dropout', type=float, default=0.85, help='probability of keeping neuron during dropout')
+	parser.add_argument('--dropout', type=float, default=0.95, help='probability of keeping neuron during dropout')
 
-	parser.add_argument('--grad_clip', type=float, default=10., help='clip gradients to this magnitude')
+	parser.add_argument('--grad_clip', type=float, default=1., help='clip gradients to this magnitude')
 	parser.add_argument('--optimizer', type=str, default='rmsprop', help="ctype of optimizer: 'rmsprop' 'adam'")
-	parser.add_argument('--learning_rate', type=float, default=1e-4, help='learning rate')
-	parser.add_argument('--lr_decay', type=float, default=1.0, help='decay rate for learning rate')
+	parser.add_argument('--learning_rate', type=float, default=1e-6, help='learning rate')
+	parser.add_argument('--lr_decay', type=float, default=0.9, help='decay rate for learning rate')
 	parser.add_argument('--decay', type=float, default=0.95, help='decay rate for rmsprop')
 	parser.add_argument('--momentum', type=float, default=0.9, help='momentum for rmsprop')
 
@@ -58,7 +60,9 @@ def main():
 	train_model(args) if args.train else sample_model(args)
 
 def train_model(args):
+	tf.compat.v1.random.set_random_seed(1234)
 	tf.debugging.set_log_device_placement(True)
+	tf.reset_default_graph()
 	# with tf.device('/gpu:0'):
 	# 	a = tf.constant([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], shape=[2, 3], name='a')
 	# 	b = tf.constant([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], shape=[3, 2], name='b')
@@ -82,6 +86,20 @@ def train_model(args):
 	valid_inputs = {model.input_data: v_x, model.target_data: v_y, model.char_seq: v_c}
 
 	logger.write("training...")
+
+	# with tf.Session() as sess:
+
+	# sess=tf.Session()
+	TIMESTAMP = "{0:%Y-%m-%dT%H-%M-%S/}".format(datetime.now())
+
+	train_log_dir = args.log_dir + TIMESTAMP
+
+
+
+	summary_writer = tf.summary.FileWriter(train_log_dir)
+	summary_writer.add_graph(model.sess.graph)
+
+
 	model.sess.run(tf.assign(model.decay, args.decay ))
 	model.sess.run(tf.assign(model.momentum, args.momentum ))
 	running_average = 0.0 ; remember_rate = 0.99
@@ -94,7 +112,7 @@ def train_model(args):
 		kappa = np.zeros((args.batch_size, args.kmixtures, 1))
 
 		for b in range(int(global_step%args.nbatches), args.nbatches):
-			
+
 			i = e * args.nbatches + b
 			if global_step is not 0 : i+=1 ; global_step = 0
 
@@ -108,16 +126,23 @@ def train_model(args):
 					model.istate_cell0.c: c0, model.istate_cell1.c: c1, model.istate_cell2.c: c2, \
 					model.istate_cell0.h: h0, model.istate_cell1.h: h1, model.istate_cell2.h: h2}
 
-			[train_loss, _] = model.sess.run([model.cost, model.train_op], feed)
+			[train_loss, _,summary] = model.sess.run([model.cost, model.train_op,model.merged], feed)
 			feed.update(valid_inputs)
 			feed[model.init_kappa] = np.zeros((args.batch_size, args.kmixtures, 1))
 			[valid_loss] = model.sess.run([model.cost], feed)
-			
+
+
+
 			running_average = running_average*remember_rate + train_loss*(1-remember_rate)
+
+			# summary=model.sess(modle.merged)
+
+			summary_writer.add_summary(summary)
 
 			end = time.time()
 			if i % 10 is 0: logger.write("{}/{}, loss = {:.3f}, regloss = {:.5f}, valid_loss = {:.3f}, time = {:.3f}" \
 				.format(i, args.nepochs * args.nbatches, train_loss, running_average, valid_loss, end - start) )
+	model.sess.close()
 
 def sample_model(args, logger=None):
 	if args.text == '':

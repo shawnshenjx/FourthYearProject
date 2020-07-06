@@ -30,8 +30,8 @@ class Model():
 		self.tsteps_per_ascii = args.tsteps_per_ascii
 		self.data_dir = args.data_dir
 
-		self.graves_initializer = tf.truncated_normal_initializer(mean=0., stddev=.075, seed=None, dtype=tf.float32)
-		self.window_b_initializer = tf.compat.v1.truncated_normal_initializer(mean=-3.0, stddev=.25, seed=None, dtype=tf.float32) # hacky initialization
+		self.graves_initializer = tf.compat.v1.truncated_normal_initializer(mean=0., stddev=.075, seed=None, dtype=tf.float32)
+		self.window_b_initializer = tf.compat.v1.truncated_normal_initializer(mean=0., stddev=.25, seed=None, dtype=tf.float32) # hacky initialization
 
 		self.logger.write('\tusing alphabet{}'.format(self.alphabet))
 		self.char_vec_len = len(self.alphabet) + 1 #plus one for <UNK> token
@@ -87,6 +87,8 @@ class Model():
 			with tf.variable_scope('window',reuse=reuse):
 				window_w = tf.get_variable("window_w", [hidden, n_out], initializer=self.graves_initializer)
 				window_b = tf.get_variable("window_b", [n_out], initializer=self.window_b_initializer)
+				tf.summary.histogram('window_w_summary',window_w)
+				tf.summary.histogram('window_b_summary', window_b)
 			abk_hats = tf.nn.xw_plus_b(out_cell0, window_w, window_b) # abk_hats ~ [?,n_out]
 			abk = tf.exp(tf.reshape(abk_hats, [-1, 3*kmixtures,1])) # abk_hats ~ [?,n_out] = "alpha, beta, kappa hats"
 
@@ -126,6 +128,8 @@ class Model():
 		with tf.variable_scope('mdn_dense'):
 			mdn_w = tf.get_variable("output_w", [self.rnn_size, n_out], initializer=self.graves_initializer)
 			mdn_b = tf.get_variable("output_b", [n_out], initializer=self.graves_initializer)
+			tf.summary.histogram('mdn_w_summary', mdn_w)
+			tf.summary.histogram('mdn_b_summary', mdn_b)
 
 		out_cell2 = tf.reshape(tf.concat(outs_cell2, 1), [-1, args.rnn_size]) #concat outputs for efficiency
 		output = tf.nn.xw_plus_b(out_cell2, mdn_w, mdn_b) #data flows through dense nn
@@ -177,6 +181,7 @@ class Model():
 			Z=tf.multiply(tf.square(x_mu1),d11)+tf.multiply(tf.square(x_mu2),d22)+tf.multiply(tf.square(x_mu3),d33) + 2 * tf.multiply(tf.multiply(x_mu1, x_mu2), d12) + 2 * tf.multiply(tf.multiply(x_mu1, x_mu3), d13) + 2 * tf.multiply(tf.multiply(x_mu2, x_mu3), d23)
 
 			power_e=tf.exp(tf.div(-Z,2))
+
 			regularize_term=tf.multiply(tf.pow(2*np.pi,tf.div(3.0,2.0)),tf.sqrt(D))
 
 			gaussian=tf.div(power_e,regularize_term)
@@ -324,6 +329,12 @@ class Model():
 		tvars = tf.trainable_variables()
 		grads, _ = tf.clip_by_global_norm(tf.gradients(self.cost, tvars), self.grad_clip)
 
+		for g in grads:
+			with tf.name_scope('gradients'):
+				tf_grad_norm=tf.sqrt(tf.reduce_mean(g**2))
+				tf_gradnorm_summary = tf.summary.scalar('grad_norm',tf_grad_norm)
+				break
+
 		if args.optimizer == 'adam':
 			self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
 		elif args.optimizer == 'rmsprop':
@@ -331,6 +342,8 @@ class Model():
 		else:
 			raise ValueError("Optimizer type not recognized")
 		self.train_op = self.optimizer.apply_gradients(list(zip(grads, tvars)))
+
+		self.merged = tf.summary.merge_all()
 
 		# ----- some TensorFlow I/O
 		self.sess = tf.InteractiveSession()

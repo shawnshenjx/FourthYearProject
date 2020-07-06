@@ -4,6 +4,7 @@ import random
 import os
 import pickle as pickle
 import xml.etree.ElementTree as ET
+from sklearn import preprocessing
 
 from utils import *
 
@@ -67,11 +68,11 @@ class DataLoader():
                         if row == []:
                             continue
 
-
-                        pos_list.append([float(row[0])-pre_x, float(row[1])-pre_y, float(row[2])-pre_z])
-                        pre_x=float(row[0])
-                        pre_y=float(row[1])
-                        pre_z=float(row[2])
+                        pos_list.append([float(row[0]), float(row[1]), float(row[2])])
+                        # pos_list.append([float(row[0])-pre_x, float(row[1])-pre_y, float(row[2])-pre_z])
+                        # pre_x=float(row[0])
+                        # pre_y=float(row[1])
+                        # pre_z=float(row[2])
                         t.append(float(row[3]))
 
                 asciis.append(phrases_join)
@@ -88,6 +89,7 @@ class DataLoader():
     def load_preprocessed(self, data_file):
         f = open(data_file,"rb")
         [self.raw_stroke_data, self.raw_ascii_data] = pickle.load(f, encoding='latin1')
+        # [raw_stroke_data, raw_ascii_data] = pickle.load(f, encoding='latin1')
         f.close()
 
         # goes thru the list, and only keeps the text entries that have more than tsteps points
@@ -109,7 +111,7 @@ class DataLoader():
             pad = int(np.shape(self.raw_stroke_data[-1])[0] - np.shape(data)[0])
             # pad_half = int(round(pad / 2))
             # data = np.concatenate((np.zeros((int(pad - pad_half), 3)), data, np.zeros((pad_half, 3))), axis=0)
-            data = np.concatenate(( data, np.zeros((pad, 3))), axis=0)
+            data = np.concatenate((data, np.zeros((pad, 3))), axis=0)
 
             cur_data_counter = cur_data_counter + 1
             data = np.array(data, dtype=np.float32)
@@ -141,6 +143,7 @@ class DataLoader():
             # # print('pad'+str(pad))
             # pad_half=int(round(pad / 2))
             # data=np.concatenate((np.zeros((int(pad-pad_half),3)),data,np.zeros((pad_half,3))), axis=0)
+            data=preprocessing.normalize(data)
             x_batch.append(np.copy(data[:self.tsteps]))
             y_batch.append(np.copy(data[1:self.tsteps+1]))
             ascii_list.append(self.valid_ascii_data[valid_ix])
@@ -182,7 +185,9 @@ def to_one_hot(s, ascii_steps, alphabet):
     # clip super-long strings
     seq = [alphabet.find(char) + 1 for char in s]
     if len(seq) >= ascii_steps:
-        seq = seq[:ascii_steps]
+        # print(ascii_steps)
+        seq = seq[:int(ascii_steps)]
+
     else:
         seq = seq + [0]*int(ascii_steps - int(len(seq)))
     one_hot = np.zeros((int(ascii_steps),len(alphabet)+1))
