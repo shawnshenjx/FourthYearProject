@@ -114,49 +114,49 @@ def window_plots(phis, windows, save_path='.'):
     plt.savefig(save_path)
     plt.clf() ; plt.cla()
 
-
-def multivariate_normal(x1, x2, x3, mu1=0., mu2=0., mu3=0., s1=1., s2=1., s3=1., rho12=0., rho23=0., rho31=0.):
-
-
-
-    mean = [mu1, mu2, mu3]
-    cov = [[s1 * s1, rho12 * s1 * s2, rho31 * s1 * s3], [rho12 * s1 * s2, s2 * s2, rho23 * s2 * s2],
-           [rho31 * s1 * s3, rho23 * s2 * s3, s3 * s3]]
-
-    x = [x1, x2, x3]
-
-    pdf=multivariate_normal.pdf(x,mean,cov)
-    return pdf
-
-
-# a heatmap for the probabilities of each pen point in the sequence
-def gauss_plot(strokes, title, figsize = (20,2), save_path='.'):
-    import matplotlib.mlab as mlab
-    import matplotlib.cm as cm
-    import matplotlib as mpl
-    mpl.use('Agg')
-    import matplotlib.pyplot as plt
-    plt.figure(figsize=figsize) #
-    buff = 1 ; epsilon = 1e-4
-    minx, maxx = np.min(strokes[:,0])-buff, np.max(strokes[:,0])+buff
-    miny, maxy = np.min(strokes[:,1])-buff, np.max(strokes[:,1])+buff
-    minz, maxz = np.min(strokes[:, 2]) - buff, np.max(strokes[:, 1]) + buff
-    delta = abs(maxx-minx)/400. ;
-
-    x = np.arange(minx, maxx, delta)
-    y = np.arange(miny, maxy, delta)
-    z = np.arange(minz, maxz, delta)
-    X, Y ,Z= np.meshgrid(x, y ,z)
-    for i in range(strokes.shape[0]):
-        gauss = multivariate_normal(X, Y, Z, mu1=strokes[i,0], mu2=strokes[i,1], mu3=strokes[i,2] ,s1=strokes[i,3], s2=strokes[i,4],s3=strokes[i,5]) # sigmaxy=strokes[i,4] gives error
-        Z += gauss/(np.max(gauss) + epsilon)
-
-    plt.title(title, fontsize=20)
-    plt.imshow(Z)
-    plt.savefig(save_path)
-    plt.clf() ; plt.cla()
-
-
+#
+# def multivariate_normal_(x1, x2, x3, mu1=0., mu2=0., mu3=0., s1=1., s2=1., s3=1., rho12=0., rho23=0., rho31=0.):
+#
+#
+#
+#     mean = [mu1, mu2, mu3]
+#     cov = [[s1 * s1, rho12 * s1 * s2, rho31 * s1 * s3], [rho12 * s1 * s2, s2 * s2, rho23 * s2 * s2],
+#            [rho31 * s1 * s3, rho23 * s2 * s3, s3 * s3]]
+#
+#     x = [x1, x2, x3]
+#
+#     pdf=multivariate_normal.pdf(x,mean,cov)
+#     return pdf
+#
+#
+# # a heatmap for the probabilities of each pen point in the sequence
+# def gauss_plot(strokes, title, figsize = (20,2), save_path='.'):
+#     import matplotlib.mlab as mlab
+#     import matplotlib.cm as cm
+#     import matplotlib as mpl
+#     mpl.use('Agg')
+#     import matplotlib.pyplot as plt
+#     plt.figure(figsize=figsize) #
+#     buff = 1 ; epsilon = 1e-4
+#     minx, maxx = np.min(strokes[:,0])-buff, np.max(strokes[:,0])+buff
+#     miny, maxy = np.min(strokes[:,1])-buff, np.max(strokes[:,1])+buff
+#     minz, maxz = np.min(strokes[:, 2]) - buff, np.max(strokes[:, 2]) + buff
+#     delta = abs(maxx-minx)/400. ;
+#
+#     x = np.arange(minx, maxx, delta)
+#     y = np.arange(miny, maxy, delta)
+#     z = np.arange(minz, maxz, delta)
+#     X, Y ,Z= np.meshgrid(x, y ,z)
+#     for i in range(strokes.shape[0]):
+#         gauss = multivariate_normal_(X, Y, Z, mu1=strokes[i,0], mu2=strokes[i,1], mu3=strokes[i,2] ,s1=strokes[i,3], s2=strokes[i,4],s3=strokes[i,5]) # sigmaxy=strokes[i,4] gives error
+#         Z += gauss/(np.max(gauss) + epsilon)
+#
+#     plt.title(title, fontsize=20)
+#     plt.imshow(Z)
+#     plt.savefig(save_path)
+#     plt.clf() ; plt.cla()
+#
+#
 
 
 # plots the stroke data (handwriting!)

@@ -31,7 +31,7 @@ class Model():
 		self.data_dir = args.data_dir
 
 		self.graves_initializer = tf.compat.v1.truncated_normal_initializer(mean=0., stddev=.075, seed=None, dtype=tf.float32)
-		self.window_b_initializer = tf.compat.v1.truncated_normal_initializer(mean=0., stddev=.25, seed=None, dtype=tf.float32) # hacky initialization
+		self.window_b_initializer = tf.compat.v1.truncated_normal_initializer(mean=0., stddev=0., seed=None, dtype=tf.float32) # hacky initialization
 
 		self.logger.write('\tusing alphabet{}'.format(self.alphabet))
 		self.char_vec_len = len(self.alphabet) + 1 #plus one for <UNK> token
@@ -86,7 +86,7 @@ class Model():
 			n_out = 3*kmixtures
 			with tf.variable_scope('window',reuse=reuse):
 				window_w = tf.get_variable("window_w", [hidden, n_out], initializer=self.graves_initializer)
-				window_b = tf.get_variable("window_b", [n_out], initializer=self.window_b_initializer)
+				window_b = tf.get_variable("window_b", [n_out], initializer=self.graves_initializer)
 				tf.summary.histogram('window_w_summary',window_w)
 				tf.summary.histogram('window_b_summary', window_b)
 			abk_hats = tf.nn.xw_plus_b(out_cell0, window_w, window_b) # abk_hats ~ [?,n_out]
@@ -136,9 +136,9 @@ class Model():
 
 
 	# ----- build mixture density cap on top of second recurrent cell
-		def gaussian3d(x1, x2,x3, mu1, mu2, mu3, s1, s2, s3, rho12, rho23, rho31):
+		def gaussian3d(x1, x2, x3, mu1, mu2, mu3, s1, s2, s3, rho12, rho23, rho31):
 
-			x_mu1=tf.subtract(x1,mu1)
+			x_mu1 = tf.subtract(x1, mu1)
 			x_mu2 = tf.subtract(x2, mu2)
 			x_mu3 = tf.subtract(x3, mu3)
 
@@ -165,7 +165,7 @@ class Model():
 			a31=a13
 			a32=a23
 
-			D=tf.multiply(m11,a11)+tf.multiply(m12,a12)+tf.multiply(m13,a13)
+			D=tf.multiply(m11,a11)+tf.multiply(m12,a12)+tf.multiply(m13,a13)+1e-20
 
 			d11=tf.div(a11,D)
 			d12=tf.div(a12,D)

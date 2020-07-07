@@ -17,12 +17,12 @@ def main():
 	#general model params
 	parser.add_argument('--train', dest='train', action='store_true', help='train the model')
 	parser.add_argument('--sample', dest='train', action='store_false', help='sample from the model')
-	parser.add_argument('--rnn_size', type=int, default=100, help='size of RNN hidden state')
-	parser.add_argument('--tsteps', type=int, default=180, help='RNN time steps (for backprop)')
-	parser.add_argument('--nmixtures', type=int, default=8, help='number of gaussian mixtures')
+	parser.add_argument('--rnn_size', type=int, default=400, help='size of RNN hidden state')
+	parser.add_argument('--tsteps', type=int, default=540, help='RNN time steps (for backprop)')
+	parser.add_argument('--nmixtures', type=int, default=20, help='number of gaussian mixtures')
 
 	# window params
-	parser.add_argument('--kmixtures', type=int, default=1, help='number of gaussian mixtures for character window')
+	parser.add_argument('--kmixtures', type=int, default=10, help='number of gaussian mixtures for character window')
 	# parser.add_argument('--alphabet', type=str, default='_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', \
 	# 					help='default is a-z, A-Z, space, and <UNK> tag')
 	parser.add_argument('--alphabet', type=str, default=' abcdefghijklmnopqrstuvwxyz', \
@@ -33,12 +33,12 @@ def main():
 	parser.add_argument('--batch_size', type=int, default=32, help='batch size for each gradient step')
 	parser.add_argument('--nbatches', type=int, default=500, help='number of batches per epoch')
 	parser.add_argument('--nepochs', type=int, default=250, help='number of epochs')
-	parser.add_argument('--dropout', type=float, default=0.95, help='probability of keeping neuron during dropout')
+	parser.add_argument('--dropout', type=float, default=0.8, help='probability of keeping neuron during dropout')
 
-	parser.add_argument('--grad_clip', type=float, default=1., help='clip gradients to this magnitude')
-	parser.add_argument('--optimizer', type=str, default='rmsprop', help="ctype of optimizer: 'rmsprop' 'adam'")
-	parser.add_argument('--learning_rate', type=float, default=1e-6, help='learning rate')
-	parser.add_argument('--lr_decay', type=float, default=0.9, help='decay rate for learning rate')
+	parser.add_argument('--grad_clip', type=float, default=4., help='clip gradients to this magnitude')
+	parser.add_argument('--optimizer', type=str, default='adam', help="ctype of optimizer: 'rmsprop' 'adam'")
+	parser.add_argument('--learning_rate', type=float, default=1e-4, help='learning rate')
+	parser.add_argument('--lr_decay', type=float, default=0.8, help='decay rate for learning rate')
 	parser.add_argument('--decay', type=float, default=0.95, help='decay rate for rmsprop')
 	parser.add_argument('--momentum', type=float, default=0.9, help='momentum for rmsprop')
 
@@ -146,8 +146,8 @@ def train_model(args):
 
 def sample_model(args, logger=None):
 	if args.text == '':
-		strings = ['this is great work', 'a project by shawn shen', 'hello world', \
-			'this should be okay', 'how is the weather'] # test strings
+		strings = ['very good', 'a project', 'hello', \
+			'this', 'how is'] # test strings
 	else:
 		strings = [args.text]
 
@@ -170,7 +170,7 @@ def sample_model(args, logger=None):
 			l_save_path = '{}figures/iter-{}-l-{}'.format(args.log_dir, global_step, s[:10].replace(' ', '_'))
 
 			window_plots(phis, windows, save_path=w_save_path)
-			gauss_plot(strokes, 'Heatmap for "{}"'.format(s), figsize = (2*len(s),2*len(s)), save_path=g_save_path)
+			# gauss_plot(strokes, 'Heatmap for "{}"'.format(s), figsize = (2*len(s),2*len(s)), save_path=g_save_path)
 			line_plot(strokes, '3D plot for "{}"'.format(s), figsize = (len(s),len(s)), save_path=l_save_path)
 
 			# make sure that kappas are reasonable

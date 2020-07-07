@@ -46,7 +46,7 @@ class DataLoader():
         strokes = []
         for ID in range(20):
             # for id in np.arange(20,21,1):
-            path = 'Trace_data_processed\ID%s\*.csv' % (ID + 1)
+            path = 'Trace_data_processed_split\ID%s\*.csv' % (ID + 1)
 
             for fname in sorted(glob.glob(path), reverse=True):
                 #     print (fname)
@@ -62,7 +62,7 @@ class DataLoader():
                 pre_y=0
                 pre_z=0
                 with open(fname, newline='') as csvfile:
-                    spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+                    spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
                     #             counter=0|
                     for row in spamreader:
                         if row == []:
